@@ -8,3 +8,12 @@
 /captures
 .externalNativeBuild
 .cxx
+
+# Podpisové klíče a hesla – NIKDY necommitovat
+/keystore.properties
+/release.jks
+*.jks
+*.keystore
+
+# Hotová APK
+*.apk
