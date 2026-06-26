@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CallAndSMSStats</string>
+    <string name="incoming_calls">Příchozí hovory</string>
+    <string name="outgoing_calls">Odchozí hovory</string>
+    <string name="missed_calls">Zmeškané hovory</string>
+    <string name="rejected_calls">Odmítnuté hovory</string>
+    <string name="incoming_sms">Příchozí SMS</string>
+    <string name="outgoing_sms">Odchozí SMS</string>
+    <string name="permissions_required">Bez oprávnění ke čtení hovorů a SMS nelze statistiky zobrazit.</string>
+    <string name="no_data">Žádná data k zobrazení.</string>
+</resources>
