@@ -17,9 +17,18 @@ public class MonthStatsAdapter extends RecyclerView.Adapter<MonthStatsAdapter.Vi
 
     private static final Locale CZECH = new Locale("cs");
 
+    public interface OnMonthClickListener {
+        void onMonthClick(MonthStat stat);
+    }
+
     private final List<MonthStat> items = new ArrayList<>();
     private final DateTimeFormatter monthFormatter =
             DateTimeFormatter.ofPattern("LLLL yyyy", CZECH);
+    private OnMonthClickListener clickListener;
+
+    public void setOnMonthClickListener(OnMonthClickListener listener) {
+        this.clickListener = listener;
+    }
 
     public void setItems(List<MonthStat> newItems) {
         items.clear();
@@ -38,6 +47,11 @@ public class MonthStatsAdapter extends RecyclerView.Adapter<MonthStatsAdapter.Vi
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         MonthStat stat = items.get(position);
+        holder.itemView.setOnClickListener(v -> {
+            if (clickListener != null) {
+                clickListener.onMonthClick(stat);
+            }
+        });
         holder.title.setText(capitalize(stat.month.format(monthFormatter)));
         holder.incomingCalls.setText(MonthStat.formatDuration(stat.incomingCallSeconds));
         holder.outgoingCalls.setText(MonthStat.formatDuration(stat.outgoingCallSeconds));

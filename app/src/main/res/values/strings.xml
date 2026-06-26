@@ -9,4 +9,22 @@
     <string name="outgoing_sms">Odchozí SMS</string>
     <string name="permissions_required">Bez oprávnění ke čtení hovorů a SMS nelze statistiky zobrazit.</string>
     <string name="no_data">Žádná data k zobrazení.</string>
+
+    <string name="detail_incoming_call">Příchozí hovor</string>
+    <string name="detail_outgoing_call">Odchozí hovor</string>
+    <string name="detail_missed_call">Zmeškaný hovor</string>
+    <string name="detail_rejected_call">Odmítnutý hovor</string>
+    <string name="detail_incoming_sms">Příchozí SMS</string>
+    <string name="detail_outgoing_sms">Odchozí SMS</string>
+    <string name="detail_unknown_number">Neznámé číslo</string>
+    <string name="detail_empty">V tomto měsíci nejsou žádné záznamy.</string>
+    <string name="filter_empty">Žádné záznamy tohoto typu.</string>
+
+    <string name="filter_all">Vše</string>
+    <string name="filter_incoming_calls">Příchozí hovory</string>
+    <string name="filter_outgoing_calls">Odchozí hovory</string>
+    <string name="filter_missed">Zmeškané</string>
+    <string name="filter_rejected">Odmítnuté</string>
+    <string name="filter_incoming_sms">Příchozí SMS</string>
+    <string name="filter_outgoing_sms">Odchozí SMS</string>
 </resources>

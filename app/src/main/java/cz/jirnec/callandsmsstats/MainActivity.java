@@ -1,6 +1,7 @@
 package cz.jirnec.callandsmsstats;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
@@ -24,9 +25,19 @@ import java.util.concurrent.Executors;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_PERMISSIONS = 100;
-    private static final String[] PERMISSIONS = {
+    private static final int REQ_CONTACTS = 101;
+
+    /** Povinná oprávnění – bez nich nelze statistiky vůbec sestavit. */
+    private static final String[] REQUIRED_PERMISSIONS = {
             Manifest.permission.READ_CALL_LOG,
             Manifest.permission.READ_SMS
+    };
+
+    /** Žádáme i kontakty (pro jména u SMS), ale jsou nepovinné. */
+    private static final String[] REQUESTED_PERMISSIONS = {
+            Manifest.permission.READ_CALL_LOG,
+            Manifest.permission.READ_SMS,
+            Manifest.permission.READ_CONTACTS
     };
 
     private final MonthStatsAdapter adapter = new MonthStatsAdapter();
@@ -55,16 +66,32 @@ public class MainActivity extends AppCompatActivity {
         emptyView = findViewById(R.id.emptyView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
+        adapter.setOnMonthClickListener(stat -> {
+            Intent intent = new Intent(this, DetailActivity.class);
+            intent.putExtra(DetailActivity.EXTRA_YEAR, stat.month.getYear());
+            intent.putExtra(DetailActivity.EXTRA_MONTH, stat.month.getMonthValue());
+            startActivity(intent);
+        });
 
-        if (hasPermissions()) {
+        if (hasRequiredPermissions()) {
             loadStats();
+            requestContactsIfNeeded();
         } else {
-            ActivityCompat.requestPermissions(this, PERMISSIONS, REQ_PERMISSIONS);
+            ActivityCompat.requestPermissions(this, REQUESTED_PERMISSIONS, REQ_PERMISSIONS);
         }
     }
 
-    private boolean hasPermissions() {
-        for (String permission : PERMISSIONS) {
+    /** Nepovinné: požádá o kontakty kvůli jménům u SMS, pokud ještě nejsou povolené. */
+    private void requestContactsIfNeeded() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.READ_CONTACTS}, REQ_CONTACTS);
+        }
+    }
+
+    private boolean hasRequiredPermissions() {
+        for (String permission : REQUIRED_PERMISSIONS) {
             if (ContextCompat.checkSelfPermission(this, permission)
                     != PackageManager.PERMISSION_GRANTED) {
                 return false;
@@ -78,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQ_PERMISSIONS) {
-            if (hasPermissions()) {
+            if (hasRequiredPermissions()) {
                 loadStats();
             } else {
                 showMessage(getString(R.string.permissions_required));
