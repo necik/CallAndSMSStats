@@ -1,5 +1,8 @@
 # CallAndSMSStats
 
+[![GitHub release](https://img.shields.io/github/v/release/necik/CallAndSMSStats)](https://github.com/necik/CallAndSMSStats/releases)
+[![Downloads](https://img.shields.io/github/downloads/necik/CallAndSMSStats/total)](https://github.com/necik/CallAndSMSStats/releases)
+
 Android app (Java) giving an overview of your calls and SMS by calendar month.
 
 ## Features
