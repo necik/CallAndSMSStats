@@ -11,6 +11,8 @@ public class MonthStat {
     public final YearMonth month;
     public long incomingCallSeconds;
     public long outgoingCallSeconds;
+    public int incomingCallCount;
+    public int outgoingCallCount;
     public int missedCalls;
     public int rejectedCalls;
     public int incomingSms;

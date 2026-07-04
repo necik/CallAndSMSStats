@@ -63,6 +63,15 @@ public class StatsRepository {
         return entries;
     }
 
+    /** Načte všechny hovory a SMS napříč všemi měsíci (od nejnovějšího) – pro export. */
+    public List<DetailEntry> loadAllEntries() {
+        List<DetailEntry> entries = new ArrayList<>();
+        readCallEntries(entries, 0L, Long.MAX_VALUE);
+        readSmsEntries(entries, 0L, Long.MAX_VALUE);
+        entries.sort(Comparator.comparingLong((DetailEntry e) -> e.timestamp).reversed());
+        return entries;
+    }
+
     private void readCallEntries(List<DetailEntry> out, long start, long end) {
         String[] projection = {
                 CallLog.Calls.TYPE,
@@ -214,9 +223,11 @@ public class StatsRepository {
                 switch (type) {
                     case CallLog.Calls.INCOMING_TYPE:
                         stat.incomingCallSeconds += duration;
+                        stat.incomingCallCount += 1;
                         break;
                     case CallLog.Calls.OUTGOING_TYPE:
                         stat.outgoingCallSeconds += duration;
+                        stat.outgoingCallCount += 1;
                         break;
                     case CallLog.Calls.MISSED_TYPE:
                         stat.missedCalls += 1;

@@ -1,5 +1,6 @@
 package cz.jirnec.callandsmsstats;
 
+import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,16 +9,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class DetailAdapter extends RecyclerView.Adapter<DetailAdapter.ViewHolder> {
-
-    private static final Locale CZECH = new Locale("cs");
 
     private static final int[] LABEL_RES = {
             R.string.detail_incoming_call,
@@ -29,9 +24,6 @@ public class DetailAdapter extends RecyclerView.Adapter<DetailAdapter.ViewHolder
     };
 
     private final List<DetailEntry> items = new ArrayList<>();
-    private final ZoneId zone = ZoneId.systemDefault();
-    private final DateTimeFormatter dateTimeFormatter =
-            DateTimeFormatter.ofPattern("d.M.yyyy H:mm", CZECH);
 
     public void setItems(List<DetailEntry> newItems) {
         items.clear();
@@ -59,9 +51,12 @@ public class DetailAdapter extends RecyclerView.Adapter<DetailAdapter.ViewHolder
             holder.contact.setText(entry.contact);
         }
 
-        String dateTime = Instant.ofEpochMilli(entry.timestamp)
-                .atZone(zone)
-                .format(dateTimeFormatter);
+        // Formát data i času podle národního prostředí a systémového nastavení
+        // (pořadí složek data, oddělovače i 12/24h přepínač).
+        String dateTime = DateUtils.formatDateTime(holder.itemView.getContext(),
+                entry.timestamp,
+                DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR
+                        | DateUtils.FORMAT_SHOW_TIME);
         holder.dateTime.setText(dateTime);
 
         if (entry.hasDuration()) {

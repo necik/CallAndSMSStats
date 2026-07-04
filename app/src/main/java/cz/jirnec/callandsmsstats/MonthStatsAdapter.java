@@ -15,15 +15,13 @@ import java.util.Locale;
 
 public class MonthStatsAdapter extends RecyclerView.Adapter<MonthStatsAdapter.ViewHolder> {
 
-    private static final Locale CZECH = new Locale("cs");
-
     public interface OnMonthClickListener {
         void onMonthClick(MonthStat stat);
     }
 
     private final List<MonthStat> items = new ArrayList<>();
     private final DateTimeFormatter monthFormatter =
-            DateTimeFormatter.ofPattern("LLLL yyyy", CZECH);
+            DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault());
     private OnMonthClickListener clickListener;
 
     public void setOnMonthClickListener(OnMonthClickListener listener) {
@@ -53,8 +51,8 @@ public class MonthStatsAdapter extends RecyclerView.Adapter<MonthStatsAdapter.Vi
             }
         });
         holder.title.setText(capitalize(stat.month.format(monthFormatter)));
-        holder.incomingCalls.setText(MonthStat.formatDuration(stat.incomingCallSeconds));
-        holder.outgoingCalls.setText(MonthStat.formatDuration(stat.outgoingCallSeconds));
+        holder.incomingCalls.setText(callValue(holder, stat.incomingCallSeconds, stat.incomingCallCount));
+        holder.outgoingCalls.setText(callValue(holder, stat.outgoingCallSeconds, stat.outgoingCallCount));
         holder.missedCalls.setText(String.valueOf(stat.missedCalls));
         holder.rejectedCalls.setText(String.valueOf(stat.rejectedCalls));
         holder.incomingSms.setText(String.valueOf(stat.incomingSms));
@@ -66,11 +64,18 @@ public class MonthStatsAdapter extends RecyclerView.Adapter<MonthStatsAdapter.Vi
         return items.size();
     }
 
+    /** Hodnota buňky hovorů: celkový čas a v závorce počet, např. "02:15:43 · 12×". */
+    private String callValue(ViewHolder holder, long seconds, int count) {
+        return holder.itemView.getContext().getString(
+                R.string.call_value_format, MonthStat.formatDuration(seconds), count);
+    }
+
     private String capitalize(String text) {
         if (text == null || text.isEmpty()) {
             return text;
         }
-        return text.substring(0, 1).toUpperCase(CZECH) + text.substring(1);
+        Locale locale = Locale.getDefault();
+        return text.substring(0, 1).toUpperCase(locale) + text.substring(1);
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

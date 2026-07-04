@@ -3,21 +3,29 @@ package cz.jirnec.callandsmsstats;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -133,6 +141,103 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setVisibility(View.GONE);
         emptyView.setVisibility(View.VISIBLE);
         emptyView.setText(message);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_export) {
+            onExportClicked();
+            return true;
+        }
+        if (id == R.id.action_info) {
+            showInfoDialog();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showInfoDialog() {
+        View view = getLayoutInflater().inflate(R.layout.dialog_info, null);
+        ((TextView) view.findViewById(R.id.infoName)).setText(R.string.app_name);
+
+        String version = "";
+        try {
+            version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (PackageManager.NameNotFoundException ignored) {
+            // versionName zůstane prázdný – nemělo by nastat.
+        }
+        ((TextView) view.findViewById(R.id.infoVersion))
+                .setText(getString(R.string.info_version, version));
+
+        new AlertDialog.Builder(this)
+                .setView(view)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
+    private void onExportClicked() {
+        if (!hasRequiredPermissions()) {
+            Toast.makeText(this, R.string.permissions_required, Toast.LENGTH_LONG).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.export_choose_format)
+                .setItems(new CharSequence[]{"CSV", "JSON"}, (dialog, which) ->
+                        exportData(which == 0))
+                .show();
+    }
+
+    private void exportData(boolean csv) {
+        AlertDialog progress = new AlertDialog.Builder(this)
+                .setView(getLayoutInflater().inflate(R.layout.dialog_progress, null))
+                .setCancelable(false)
+                .create();
+        progress.show();
+
+        StatsRepository repository = new StatsRepository(this);
+        executor.execute(() -> {
+            try {
+                List<MonthStat> months = repository.loadStats();
+                List<DetailEntry> entries = repository.loadAllEntries();
+                File file = csv
+                        ? Exporter.writeCsv(this, months, entries)
+                        : Exporter.writeJson(this, months, entries);
+                Uri uri = FileProvider.getUriForFile(
+                        this, getPackageName() + ".fileprovider", file);
+                String mime = csv ? "text/csv" : "application/json";
+                runOnUiThread(() -> {
+                    dismissDialog(progress);
+                    shareFile(uri, mime, file.getName());
+                });
+            } catch (IOException | RuntimeException e) {
+                runOnUiThread(() -> {
+                    dismissDialog(progress);
+                    Toast.makeText(this, R.string.export_failed, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void dismissDialog(AlertDialog dialog) {
+        if (dialog.isShowing() && !isFinishing()) {
+            dialog.dismiss();
+        }
+    }
+
+    private void shareFile(Uri uri, String mimeType, String fileName) {
+        Intent share = new Intent(Intent.ACTION_SEND);
+        share.setType(mimeType);
+        share.putExtra(Intent.EXTRA_STREAM, uri);
+        share.putExtra(Intent.EXTRA_SUBJECT, fileName);
+        share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(Intent.createChooser(share, getString(R.string.export_share_title)));
     }
 
     @Override

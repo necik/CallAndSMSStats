@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Statistiky hovorů a SMS</string>
+    <string name="incoming_calls">Příchozí hovory</string>
+    <string name="outgoing_calls">Odchozí hovory</string>
+    <string name="missed_calls">Zmeškané hovory</string>
+    <string name="rejected_calls">Odmítnuté hovory</string>
+    <string name="incoming_sms">Příchozí SMS</string>
+    <string name="outgoing_sms">Odchozí SMS</string>
+    <string name="permissions_required">Bez oprávnění ke čtení hovorů a SMS nelze statistiky zobrazit.</string>
+    <string name="no_data">Žádná data k zobrazení.</string>
+
+    <string name="detail_incoming_call">Příchozí hovor</string>
+    <string name="detail_outgoing_call">Odchozí hovor</string>
+    <string name="detail_missed_call">Zmeškaný hovor</string>
+    <string name="detail_rejected_call">Odmítnutý hovor</string>
+    <string name="detail_incoming_sms">Příchozí SMS</string>
+    <string name="detail_outgoing_sms">Odchozí SMS</string>
+    <string name="detail_unknown_number">Neznámé číslo</string>
+    <string name="detail_empty">V tomto měsíci nejsou žádné záznamy.</string>
+    <string name="filter_empty">Žádné záznamy tohoto typu.</string>
+
+    <string name="filter_all">Vše</string>
+    <string name="filter_incoming_calls">Příchozí hovory</string>
+    <string name="filter_outgoing_calls">Odchozí hovory</string>
+    <string name="filter_missed">Zmeškané</string>
+    <string name="filter_rejected">Odmítnuté</string>
+    <string name="filter_incoming_sms">Příchozí SMS</string>
+    <string name="filter_outgoing_sms">Odchozí SMS</string>
+
+    <string name="action_export">Export</string>
+    <string name="export_choose_format">Formát exportu</string>
+    <string name="export_share_title">Exportovat data</string>
+    <string name="export_in_progress">Připravuji export…</string>
+    <string name="export_failed">Export se nezdařil.</string>
+
+    <string name="action_info">Info</string>
+    <string name="info_version">Verze %1$s</string>
+    <string name="info_author">Autor: Jiří Nečas</string>
+</resources>

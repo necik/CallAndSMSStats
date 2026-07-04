@@ -1,30 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">CallAndSMSStats</string>
-    <string name="incoming_calls">Příchozí hovory</string>
-    <string name="outgoing_calls">Odchozí hovory</string>
-    <string name="missed_calls">Zmeškané hovory</string>
-    <string name="rejected_calls">Odmítnuté hovory</string>
-    <string name="incoming_sms">Příchozí SMS</string>
-    <string name="outgoing_sms">Odchozí SMS</string>
-    <string name="permissions_required">Bez oprávnění ke čtení hovorů a SMS nelze statistiky zobrazit.</string>
-    <string name="no_data">Žádná data k zobrazení.</string>
+    <string name="app_name">Call and SMS stats</string>
+    <string name="incoming_calls">Incoming calls</string>
+    <string name="outgoing_calls">Outgoing calls</string>
+    <string name="missed_calls">Missed calls</string>
+    <string name="rejected_calls">Rejected calls</string>
+    <string name="incoming_sms">Incoming SMS</string>
+    <string name="outgoing_sms">Outgoing SMS</string>
+    <string name="permissions_required">Statistics can\'t be shown without permission to read calls and SMS.</string>
+    <string name="no_data">No data to display.</string>
 
-    <string name="detail_incoming_call">Příchozí hovor</string>
-    <string name="detail_outgoing_call">Odchozí hovor</string>
-    <string name="detail_missed_call">Zmeškaný hovor</string>
-    <string name="detail_rejected_call">Odmítnutý hovor</string>
-    <string name="detail_incoming_sms">Příchozí SMS</string>
-    <string name="detail_outgoing_sms">Odchozí SMS</string>
-    <string name="detail_unknown_number">Neznámé číslo</string>
-    <string name="detail_empty">V tomto měsíci nejsou žádné záznamy.</string>
-    <string name="filter_empty">Žádné záznamy tohoto typu.</string>
+    <!-- Buňka hovorů: %1$s = celkový čas (HH:MM:SS), %2$d = počet hovorů -->
+    <string name="call_value_format">%1$s (%2$d)</string>
 
-    <string name="filter_all">Vše</string>
-    <string name="filter_incoming_calls">Příchozí hovory</string>
-    <string name="filter_outgoing_calls">Odchozí hovory</string>
-    <string name="filter_missed">Zmeškané</string>
-    <string name="filter_rejected">Odmítnuté</string>
-    <string name="filter_incoming_sms">Příchozí SMS</string>
-    <string name="filter_outgoing_sms">Odchozí SMS</string>
+    <string name="detail_incoming_call">Incoming call</string>
+    <string name="detail_outgoing_call">Outgoing call</string>
+    <string name="detail_missed_call">Missed call</string>
+    <string name="detail_rejected_call">Rejected call</string>
+    <string name="detail_incoming_sms">Incoming SMS</string>
+    <string name="detail_outgoing_sms">Outgoing SMS</string>
+    <string name="detail_unknown_number">Unknown number</string>
+    <string name="detail_empty">No records this month.</string>
+    <string name="filter_empty">No records of this type.</string>
+
+    <string name="filter_all">All</string>
+    <string name="filter_incoming_calls">Incoming calls</string>
+    <string name="filter_outgoing_calls">Outgoing calls</string>
+    <string name="filter_missed">Missed</string>
+    <string name="filter_rejected">Rejected</string>
+    <string name="filter_incoming_sms">Incoming SMS</string>
+    <string name="filter_outgoing_sms">Outgoing SMS</string>
+
+    <string name="action_export">Export</string>
+    <string name="export_choose_format">Export format</string>
+    <string name="export_share_title">Export data</string>
+    <string name="export_in_progress">Preparing export…</string>
+    <string name="export_failed">Export failed.</string>
+
+    <string name="action_info">Info</string>
+    <string name="info_version">Version %1$s</string>
+    <string name="info_author">Author: Jiří Nečas</string>
+    <string name="info_github_url" translatable="false">https://github.com/necik/CallAndSMSStats</string>
 </resources>

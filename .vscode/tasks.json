@@ -11,6 +11,15 @@
       "problemMatcher": []
     },
     {
+      "label": "Android: Build Release (assembleRelease)",
+      "type": "shell",
+      "command": "gradle",
+      "args": ["assembleRelease"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "problemMatcher": []
+    },
+    {
       "label": "Android: Install APK",
       "type": "shell",
       "command": "${env:LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe",

@@ -30,8 +30,6 @@ public class DetailActivity extends AppCompatActivity {
     public static final String EXTRA_YEAR = "year";
     public static final String EXTRA_MONTH = "month";
 
-    private static final Locale CZECH = new Locale("cs");
-
     /** Hodnota tagu chipu "Vše" – žádné filtrování podle typu. */
     private static final int FILTER_ALL = -1;
 
@@ -93,8 +91,9 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private String formatTitle(YearMonth yearMonth) {
-        String text = yearMonth.format(DateTimeFormatter.ofPattern("LLLL yyyy", CZECH));
-        return text.substring(0, 1).toUpperCase(CZECH) + text.substring(1);
+        Locale locale = Locale.getDefault();
+        String text = yearMonth.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale));
+        return text.substring(0, 1).toUpperCase(locale) + text.substring(1);
     }
 
     private void loadEntries(YearMonth yearMonth) {

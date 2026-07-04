@@ -1,75 +1,105 @@
 # CallAndSMSStats
 
-Android aplikace (Java) pro přehled o telefonování a SMS po kalendářních měsících.
+Android app (Java) giving an overview of your calls and SMS by calendar month.
 
-## Funkce
+## Features
 
-### Hlavní obrazovka
-Seznam kalendářních měsíců seřazený od aktuálního měsíce do minulosti. Každá
-položka ukazuje za daný měsíc:
+### Main screen
+A list of calendar months, sorted from the current month back into the past.
+Each item shows, for that month:
 
-- celkový čas příchozích hovorů (HH:MM:SS),
-- celkový čas odchozích hovorů (HH:MM:SS),
-- počet zmeškaných hovorů,
-- počet odmítnutých hovorů,
-- počet příchozích SMS,
-- počet odchozích SMS.
+- total time and count of incoming calls (HH:MM:SS · count),
+- total time and count of outgoing calls (HH:MM:SS · count),
+- number of missed calls,
+- number of rejected calls,
+- number of incoming SMS,
+- number of outgoing SMS.
 
-> Pozn.: Některé výrobní nadstavby Androidu ukládají odmítnuté hovory
-> nekonzistentně (občas je systém zaznamená jako zmeškané), takže rozdělení na
-> zmeškané a odmítnuté závisí na klasifikaci konkrétního zařízení.
+> Note: Some manufacturer Android skins store rejected calls inconsistently
+> (they are sometimes recorded as missed), so the split between missed and
+> rejected depends on how the specific device classifies them.
 
-### Detail měsíce
-Klepnutím na měsíc se otevře chronologický seznam (od nejnovějšího) jednotlivých
-hovorů a SMS, ze kterých souhrn vznikl — slouží ke kontrole čísel na kartě.
-U každého záznamu je typ, kontakt/číslo, datum a čas a u uskutečněných hovorů
-i délka.
+### Month detail
+Tapping a month opens a chronological list (newest first) of the individual
+calls and SMS the summary was built from — handy for verifying the numbers on
+the card. Each record shows the type, contact/number, date and time, and for
+completed calls also the duration.
 
-- **Rychlé filtrování** podle typu události (chips): Vše, Příchozí hovory,
-  Odchozí hovory, Zmeškané, Odmítnuté, Příchozí SMS, Odchozí SMS. Naposledy
-  zvolený filtr se zapamatuje (i po restartu).
-- **Jména u SMS**: pokud je odesílatel telefonní číslo uložené v kontaktech,
-  zobrazí se jméno; textové ID odesílatele (např. „Vodafone") i čísla mimo
-  adresář zůstanou tak, jak jsou. U hovorů se jméno bere z deníku hovorů
+- **Quick filtering** by event type (chips): All, Incoming calls, Outgoing
+  calls, Missed, Rejected, Incoming SMS, Outgoing SMS. The last selected filter
+  is remembered (even after a restart).
+- **Names for SMS**: if the sender is a phone number stored in contacts, the
+  name is shown; an alphanumeric sender ID (e.g. "Vodafone") and numbers not in
+  the address book are kept as-is. For calls the name comes from the call log
   (`CACHED_NAME`).
 
-## Oprávnění
+### Data export
+The **Export** action in the top bar exports all data (summaries and details for
+all months) into a single file and opens the system **share sheet** — the file
+can be saved to Google Drive, sent by e-mail, saved to Files, etc.
 
-| Oprávnění | Účel | Povinné |
+- Choice of format: **CSV** (two sections `# SUMMARY` and `# DETAILS`, opens in
+  Sheets/Excel) or **JSON** (hierarchical per month, for machine processing).
+- Date/time in the export uses the stable, locale-independent form
+  `yyyy-MM-dd HH:mm:ss` so the file is portable.
+- **Requires no extra permission** — the file is written to the app cache and
+  shared via `FileProvider`.
+
+## Permissions
+
+| Permission | Purpose | Required |
 |---|---|---|
-| `READ_CALL_LOG` | délky a typy hovorů | ano |
-| `READ_SMS` | počty SMS | ano |
-| `READ_CONTACTS` | jména u SMS podle adresáře | ne (bez něj se ukáže číslo) |
+| `READ_CALL_LOG` | call durations and types | yes |
+| `READ_SMS` | SMS counts | yes |
+| `READ_CONTACTS` | names for SMS from the address book | no (number is shown without it) |
 
-O oprávnění aplikace požádá při spuštění. Pozn.: `READ_CALL_LOG` a `READ_SMS`
-Google Play silně omezuje — pro zveřejnění na Play by bylo nutné speciální
-schválení. Pro vlastní instalaci (sideload) žádné omezení neplatí.
+The app requests permissions on launch. Note: Google Play heavily restricts
+`READ_CALL_LOG` and `READ_SMS` — publishing on Play would require special
+approval. There is no such restriction for private (sideload) installation.
 
-## Technické parametry
+## Privacy
+
+**The app has no internet access, so it cannot leak or misuse your sensitive
+data.** It does not declare the `INTERNET` permission, which means the operating
+system blocks any network connection — the app is technically incapable of
+sending call and SMS data anywhere.
+
+- All processing happens **locally on the device**; nothing is uploaded to any
+  server and there is no analytics or tracking.
+- Data leaves the device **only when you explicitly export it** and choose a
+  destination yourself in the system share sheet (see [Data export](#data-export)).
+
+## Technical details
 
 - Package / applicationId: `cz.jirnec.callandsmsstats`
-- Jazyk: Java 17
+- Language: Java 17
 - minSdk 29 (Android 10), targetSdk / compileSdk 35
-- Android Gradle Plugin 8.6.0, Gradle 8.7+ (testováno s 8.14.5)
-- Edge-to-edge (Android 15+) ošetřeno přes window insets
+- Android Gradle Plugin 8.6.0, Gradle 8.7+ (tested with 8.14.5)
+- Edge-to-edge (Android 15+) handled via window insets
+- Default language **English**; Czech is shown on devices with a Czech locale
+  (`values/` = EN, `values-cs/` = CS). Month names and formats follow the device
+  language.
+- Modern look with sharp corners (Material 3, shape appearance 0 dp, outlined
+  cards)
 
-## Sestavení bez Android Studia (CLI / VSCode)
+## Building without Android Studio (CLI / VSCode)
 
-Stačí JDK 17 + Android SDK command-line tools + Gradle. Před buildem musí být
-dostupné `java` (JDK 17) a cesta k Android SDK — buď přes proměnnou prostředí
-`ANDROID_HOME`, nebo souborem `local.properties` v kořeni projektu:
+You only need JDK 17 + Android SDK command-line tools + Gradle. Before building,
+`java` (JDK 17) must be available and the Android SDK path must be set — either
+via the `ANDROID_HOME` environment variable or a `local.properties` file in the
+project root:
 
 ```
-sdk.dir=C:/Users/<jmeno>/AppData/Local/Android/Sdk
+sdk.dir=C:/Users/<name>/AppData/Local/Android/Sdk
 ```
 
-Potřebné SDK balíčky:
+Required SDK packages:
 
 ```
 sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 ```
 
-Debug build a instalace na připojený telefon (zapnuté Ladění USB):
+Debug build and install onto a connected phone (USB debugging enabled):
 
 ```
 gradle assembleDebug
@@ -78,20 +108,21 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ### VSCode
 
-V projektu je `.vscode/tasks.json` s úlohami (Ctrl+Shift+P → **Run Task**):
+The project includes `.vscode/tasks.json` with tasks (Ctrl+Shift+P → **Run Task**):
 
-- **Android: Build (assembleDebug)** — také pod Ctrl+Shift+B
+- **Android: Build (assembleDebug)** — also on Ctrl+Shift+B
+- **Android: Build Release (assembleRelease)**
 - **Android: Install APK**
 - **Android: Launch app**
 - **Android: Build + Install + Launch**
 - **Android: Devices (adb)**
 
-Spouštět doporučeno na **fyzickém telefonu** (emulátor nemá reálné hovory ani SMS).
+Running on a **physical phone** is recommended (an emulator has no real calls or SMS).
 
-## Release build a podpis
+## Release build and signing
 
-Release APK se podepisuje vlastním klíčem. Údaje se čtou ze souboru
-`keystore.properties` v kořeni projektu (**není v gitu**):
+The release APK is signed with your own key. The credentials are read from a
+`keystore.properties` file in the project root (**not committed to git**):
 
 ```
 storeFile=release.jks
@@ -100,7 +131,7 @@ keyAlias=callandsmsstats
 keyPassword=…
 ```
 
-Vygenerování klíče (jednorázově) a build:
+Generate the key (once) and build:
 
 ```
 keytool -genkeypair -v -keystore release.jks -alias callandsmsstats \
@@ -109,15 +140,26 @@ keytool -genkeypair -v -keystore release.jks -alias callandsmsstats \
 gradle assembleRelease
 ```
 
-Podepsané APK: `app/build/outputs/apk/release/app-release.apk`.
+Signed APK: `app/build/outputs/apk/release/app-release.apk`.
 
-> ⚠️ Soubor `release.jks` a jeho heslo pečlivě zazálohujte. Pro všechny budoucí
-> aktualizace je nutné podepisovat **stejným klíčem**, jinak telefony odmítnou
-> instalaci přes stávající verzi. Klíč ani `keystore.properties` se do gitu
-> nekomitují (jsou v `.gitignore`).
+> ⚠️ Back up `release.jks` and its password carefully. Every future update must
+> be signed with the **same key**, otherwise devices will refuse to install it
+> over the existing version. Neither the key nor `keystore.properties` are
+> committed to git (they are in `.gitignore`).
 
-## Distribuce
+## Distribution
 
-Vydané verze jsou na **GitHub Releases** repozitáře `necik/CallAndSMSStats`.
-APK se stáhne a nainstaluje ručně (vyžaduje povolení instalace z neznámých
-zdrojů).
+Releases are published on **GitHub Releases** of the `necik/CallAndSMSStats`
+repository. The APK is downloaded and installed manually (requires allowing
+installation from unknown sources).
+
+## License
+
+This project is licensed under the **GNU General Public License v3.0** — see the
+[LICENSE](LICENSE) file.
+
+Copyright (C) 2026 Jiří Nečas
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU GPL v3 as published by the Free Software Foundation. This
+program is distributed WITHOUT ANY WARRANTY. See the license text for details.

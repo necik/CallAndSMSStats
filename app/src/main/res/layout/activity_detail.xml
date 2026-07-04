@@ -31,7 +31,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipAll"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.App.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
@@ -40,7 +40,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipIncomingCalls"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.App.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:tag="0"
@@ -48,7 +48,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipOutgoingCalls"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.App.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:tag="1"
@@ -56,7 +56,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipMissed"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.App.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:tag="2"
@@ -64,7 +64,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipRejected"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.App.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:tag="3"
@@ -72,7 +72,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipIncomingSms"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.App.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:tag="4"
@@ -80,7 +80,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipOutgoingSms"
-                style="@style/Widget.Material3.Chip.Filter"
+                style="@style/Widget.App.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:tag="5"
