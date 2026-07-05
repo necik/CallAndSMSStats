@@ -2,6 +2,8 @@ package cz.jirnec.callandsmsstats;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 
@@ -13,6 +15,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -43,9 +46,13 @@ public class DetailActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private TextView emptyView;
     private View filterScroll;
+    private SwipeRefreshLayout swipeRefresh;
     private ChipGroup filterChips;
+    private GestureDetector chipSwipe;
     private List<DetailEntry> allEntries;
     private SharedPreferences prefs;
+    private long rangeStart;
+    private long rangeEnd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,11 +76,14 @@ public class DetailActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.detailRecyclerView);
         emptyView = findViewById(R.id.detailEmptyView);
         filterScroll = findViewById(R.id.filterScroll);
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        swipeRefresh.setOnRefreshListener(() -> loadEntries(rangeStart, rangeEnd));
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         filterChips = findViewById(R.id.filterChips);
+        chipSwipe = ChipGestures.detector(recyclerView, filterChips);
         selectChip(prefs.getInt(KEY_FILTER, FILTER_ALL));
         filterChips.setOnCheckedStateChangeListener((group, checkedIds) -> {
             int filter = currentFilter();
@@ -83,14 +93,14 @@ public class DetailActivity extends AppCompatActivity {
             }
         });
 
-        long startMillis = getIntent().getLongExtra(EXTRA_START, 0);
-        long endMillis = getIntent().getLongExtra(EXTRA_END, 0);
+        rangeStart = getIntent().getLongExtra(EXTRA_START, 0);
+        rangeEnd = getIntent().getLongExtra(EXTRA_END, 0);
         Period period = Period.valueOf(getIntent().getStringExtra(EXTRA_PERIOD));
-        LocalDate startDate = Instant.ofEpochMilli(startMillis)
+        LocalDate startDate = Instant.ofEpochMilli(rangeStart)
                 .atZone(ZoneId.systemDefault()).toLocalDate();
         setTitle(PeriodLabels.label(this, period, startDate));
 
-        loadEntries(startMillis, endMillis);
+        loadEntries(rangeStart, rangeEnd);
     }
 
     private void loadEntries(long startMillis, long endMillis) {
@@ -98,6 +108,7 @@ public class DetailActivity extends AppCompatActivity {
         executor.execute(() -> {
             final List<DetailEntry> entries = repository.loadEntriesInRange(startMillis, endMillis);
             runOnUiThread(() -> {
+                swipeRefresh.setRefreshing(false);
                 allEntries = entries;
                 if (entries.isEmpty()) {
                     filterScroll.setVisibility(View.GONE);
@@ -158,6 +169,14 @@ public class DetailActivity extends AppCompatActivity {
             recyclerView.setVisibility(View.VISIBLE);
             adapter.setItems(filtered);
         }
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (chipSwipe != null) {
+            chipSwipe.onTouchEvent(ev);
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override

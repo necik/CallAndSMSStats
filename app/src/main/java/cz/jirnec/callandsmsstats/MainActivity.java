@@ -7,8 +7,10 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,6 +27,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -66,7 +69,9 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private TextView emptyView;
     private View progressBar;
+    private SwipeRefreshLayout swipeRefresh;
     private ChipGroup periodChips;
+    private GestureDetector chipSwipe;
     private SharedPreferences prefs;
     private boolean usageAccessAtLastLoad;
 
@@ -89,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerView);
         emptyView = findViewById(R.id.emptyView);
         progressBar = findViewById(R.id.progressBar);
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        swipeRefresh.setOnRefreshListener(this::loadStats);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
         adapter.setOnPeriodClickListener(this::openDetail);
@@ -98,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
 
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         periodChips = findViewById(R.id.periodChips);
+        chipSwipe = ChipGestures.detector(recyclerView, periodChips);
         selectPeriodChip(Period.valueOf(prefs.getString(KEY_PERIOD, Period.MONTH.name())));
         periodChips.setOnCheckedStateChangeListener((group, checkedIds) -> {
             prefs.edit().putString(KEY_PERIOD, currentPeriod().name()).apply();
@@ -113,6 +121,14 @@ public class MainActivity extends AppCompatActivity {
         } else {
             ActivityCompat.requestPermissions(this, REQUESTED_PERMISSIONS, REQ_PERMISSIONS);
         }
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (chipSwipe != null) {
+            chipSwipe.onTouchEvent(ev);
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override
@@ -177,12 +193,16 @@ public class MainActivity extends AppCompatActivity {
         Period period = currentPeriod();
         usageAccessAtLastLoad = StatsRepository.hasUsageAccess(this);
         adapter.setUsageAccessGranted(usageAccessAtLastLoad);
-        progressBar.setVisibility(View.VISIBLE);
+        // Při pull-to-refresh ukazuje spinner SwipeRefreshLayout, nedublujeme středový.
+        if (!swipeRefresh.isRefreshing()) {
+            progressBar.setVisibility(View.VISIBLE);
+        }
         StatsRepository repository = new StatsRepository(this);
         executor.execute(() -> {
             final List<PeriodStat> stats = repository.loadStats(period);
             runOnUiThread(() -> {
                 progressBar.setVisibility(View.GONE);
+                swipeRefresh.setRefreshing(false);
                 if (stats.isEmpty()) {
                     showMessage(getString(R.string.no_data));
                 } else {

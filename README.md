@@ -1,4 +1,4 @@
-# CallAndSMSStats
+# Call and SMS stats
 
 [![GitHub release](https://img.shields.io/github/v/release/necik/CallAndSMSStats)](https://github.com/necik/CallAndSMSStats/releases)
 [![Downloads](https://img.shields.io/github/downloads/necik/CallAndSMSStats/total)](https://github.com/necik/CallAndSMSStats/releases)
@@ -58,6 +58,13 @@ Files, etc.
   `yyyy-MM-dd HH:mm:ss` so the file is portable.
 - **Requires no extra permission for exporting** — the file is written to the app
   cache and shared via `FileProvider`.
+
+### Gestures
+Both screens support:
+
+- **Pull to refresh** — swipe down to reload the data.
+- **Swipe left/right** — a horizontal swipe moves to the next/previous chip
+  (the aggregation period on the main screen, the type filter in the detail).
 
 ## Permissions
 
