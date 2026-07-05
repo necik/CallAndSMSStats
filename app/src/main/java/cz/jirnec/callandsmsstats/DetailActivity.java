@@ -17,18 +17,19 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class DetailActivity extends AppCompatActivity {
 
-    public static final String EXTRA_YEAR = "year";
-    public static final String EXTRA_MONTH = "month";
+    public static final String EXTRA_START = "start";
+    public static final String EXTRA_END = "end";
+    public static final String EXTRA_PERIOD = "period";
 
     /** Hodnota tagu chipu "Vše" – žádné filtrování podle typu. */
     private static final int FILTER_ALL = -1;
@@ -82,24 +83,20 @@ public class DetailActivity extends AppCompatActivity {
             }
         });
 
-        int year = getIntent().getIntExtra(EXTRA_YEAR, 0);
-        int month = getIntent().getIntExtra(EXTRA_MONTH, 0);
-        YearMonth yearMonth = YearMonth.of(year, month);
-        setTitle(formatTitle(yearMonth));
+        long startMillis = getIntent().getLongExtra(EXTRA_START, 0);
+        long endMillis = getIntent().getLongExtra(EXTRA_END, 0);
+        Period period = Period.valueOf(getIntent().getStringExtra(EXTRA_PERIOD));
+        LocalDate startDate = Instant.ofEpochMilli(startMillis)
+                .atZone(ZoneId.systemDefault()).toLocalDate();
+        setTitle(PeriodLabels.label(this, period, startDate));
 
-        loadEntries(yearMonth);
+        loadEntries(startMillis, endMillis);
     }
 
-    private String formatTitle(YearMonth yearMonth) {
-        Locale locale = Locale.getDefault();
-        String text = yearMonth.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale));
-        return text.substring(0, 1).toUpperCase(locale) + text.substring(1);
-    }
-
-    private void loadEntries(YearMonth yearMonth) {
+    private void loadEntries(long startMillis, long endMillis) {
         StatsRepository repository = new StatsRepository(this);
         executor.execute(() -> {
-            final List<DetailEntry> entries = repository.loadEntriesForMonth(yearMonth);
+            final List<DetailEntry> entries = repository.loadEntriesInRange(startMillis, endMillis);
             runOnUiThread(() -> {
                 allEntries = entries;
                 if (entries.isEmpty()) {

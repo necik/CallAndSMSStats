@@ -3,30 +3,38 @@
 [![GitHub release](https://img.shields.io/github/v/release/necik/CallAndSMSStats)](https://github.com/necik/CallAndSMSStats/releases)
 [![Downloads](https://img.shields.io/github/downloads/necik/CallAndSMSStats/total)](https://github.com/necik/CallAndSMSStats/releases)
 
-Android app (Java) giving an overview of your calls and SMS by calendar month.
+Android app (Java) giving an overview of your calls and SMS by day, week, month,
+or year.
 
 ## Features
 
 ### Main screen
-A list of calendar months, sorted from the current month back into the past.
-Each item shows, for that month:
+A list of time periods, sorted from the current one back into the past. A row of
+chips at the top switches the aggregation period — **Day / Week / Month / Year**
+(the choice is remembered across restarts). Each item shows, for that period:
 
 - total time and count of incoming calls (HH:MM:SS · count),
 - total time and count of outgoing calls (HH:MM:SS · count),
 - number of missed calls,
 - number of rejected calls,
 - number of incoming SMS,
-- number of outgoing SMS.
+- number of outgoing SMS,
+- total mobile data used (received + sent; see [Permissions](#permissions)).
+
+Periods with no activity are still shown (with zeros), so the list is continuous
+from the current period back to the oldest data. Period labels follow the device
+locale (e.g. day with weekday, week as a date range, "June 2026", "2026").
 
 > Note: Some manufacturer Android skins store rejected calls inconsistently
 > (they are sometimes recorded as missed), so the split between missed and
 > rejected depends on how the specific device classifies them.
 
-### Month detail
-Tapping a month opens a chronological list (newest first) of the individual
+### Period detail
+Tapping a period opens a chronological list (newest first) of the individual
 calls and SMS the summary was built from — handy for verifying the numbers on
 the card. Each record shows the type, contact/number, date and time, and for
-completed calls also the duration.
+completed calls also the duration. (Mobile data has no per-event records, so it
+appears only in the summary, not here.)
 
 - **Quick filtering** by event type (chips): All, Incoming calls, Outgoing
   calls, Missed, Rejected, Incoming SMS, Outgoing SMS. The last selected filter
@@ -38,15 +46,18 @@ completed calls also the duration.
 
 ### Data export
 The **Export** action in the top bar exports all data (summaries and details for
-all months) into a single file and opens the system **share sheet** — the file
-can be saved to Google Drive, sent by e-mail, saved to Files, etc.
+all periods of the selected granularity) into a single file and opens the system
+**share sheet** — the file can be saved to Google Drive, sent by e-mail, saved to
+Files, etc.
 
 - Choice of format: **CSV** (two sections `# SUMMARY` and `# DETAILS`, opens in
-  Sheets/Excel) or **JSON** (hierarchical per month, for machine processing).
+  Sheets/Excel) or **JSON** (hierarchical per period, for machine processing).
+- Summaries include the mobile-data total (`MobileDataBytes` column / field, in
+  raw bytes; empty/`null` when usage access is not granted).
 - Date/time in the export uses the stable, locale-independent form
   `yyyy-MM-dd HH:mm:ss` so the file is portable.
-- **Requires no extra permission** — the file is written to the app cache and
-  shared via `FileProvider`.
+- **Requires no extra permission for exporting** — the file is written to the app
+  cache and shared via `FileProvider`.
 
 ## Permissions
 
@@ -55,10 +66,18 @@ can be saved to Google Drive, sent by e-mail, saved to Files, etc.
 | `READ_CALL_LOG` | call durations and types | yes |
 | `READ_SMS` | SMS counts | yes |
 | `READ_CONTACTS` | names for SMS from the address book | no (number is shown without it) |
+| `PACKAGE_USAGE_STATS` ("Usage access") | mobile data usage per period | no (data shows "—" without it) |
 
-The app requests permissions on launch. Note: Google Play heavily restricts
-`READ_CALL_LOG` and `READ_SMS` — publishing on Play would require special
-approval. There is no such restriction for private (sideload) installation.
+The app requests the runtime permissions on launch. `PACKAGE_USAGE_STATS` is a
+special access that cannot be granted by a normal dialog — it must be enabled
+manually in **Settings → Apps → Special app access → Usage access**. The app
+offers to open that screen (once), and while it is off, the mobile-data value is
+a tappable "—" that opens the same screen; once enabled, the list refreshes
+automatically.
+
+Note: Google Play heavily restricts `READ_CALL_LOG` and `READ_SMS` — publishing
+on Play would require special approval. There is no such restriction for private
+(sideload) installation.
 
 ## Privacy
 
@@ -71,6 +90,9 @@ sending call and SMS data anywhere.
   server and there is no analytics or tracking.
 - Data leaves the device **only when you explicitly export it** and choose a
   destination yourself in the system share sheet (see [Data export](#data-export)).
+- The optional "Usage access" permission is broader than the rest (it can expose
+  app-usage statistics), but since the app has no internet, nothing read through
+  it can leave the device either. It stays off unless you enable it.
 
 ## Technical details
 
@@ -84,6 +106,9 @@ sending call and SMS data anywhere.
   language.
 - Modern look with sharp corners (Material 3, shape appearance 0 dp, outlined
   cards)
+- Mobile data read via `NetworkStatsManager` (device totals). It is loaded lazily
+  only for the periods currently on screen, so switching the period stays fast.
+  Historical network stats have limited retention, so older periods may show 0.
 
 ## Building without Android Studio (CLI / VSCode)
 

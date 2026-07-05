@@ -13,8 +13,8 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -24,9 +24,9 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Vytváří exportní soubory (CSV / JSON) se souhrny i detaily za všechny měsíce.
- * Datum/čas se ukládá ve stabilním tvaru nezávislém na národním prostředí, aby
- * byl soubor přenositelný.
+ * Vytváří exportní soubory (CSV / JSON) se souhrny i detaily za všechna období
+ * zvolené granularity. Datum/čas se ukládá ve stabilním tvaru nezávislém na
+ * národním prostředí, aby byl soubor přenositelný.
  */
 public final class Exporter {
 
@@ -37,32 +37,36 @@ public final class Exporter {
     private Exporter() {
     }
 
-    public static File writeCsv(Context ctx, List<MonthStat> months, List<DetailEntry> entries)
-            throws IOException {
+    public static File writeCsv(Context ctx, List<PeriodStat> periods,
+                                List<DetailEntry> entries, Period period) throws IOException {
         ZoneId zone = ZoneId.systemDefault();
         StringBuilder sb = new StringBuilder();
 
-        sb.append("# SUMMARY\n");
-        sb.append("Month,IncomingCallTime,IncomingCallCount,OutgoingCallTime,")
-                .append("OutgoingCallCount,MissedCalls,RejectedCalls,IncomingSMS,OutgoingSMS\n");
-        for (MonthStat m : months) {
-            sb.append(m.month).append(',')
-                    .append(MonthStat.formatDuration(m.incomingCallSeconds)).append(',')
-                    .append(m.incomingCallCount).append(',')
-                    .append(MonthStat.formatDuration(m.outgoingCallSeconds)).append(',')
-                    .append(m.outgoingCallCount).append(',')
-                    .append(m.missedCalls).append(',')
-                    .append(m.rejectedCalls).append(',')
-                    .append(m.incomingSms).append(',')
-                    .append(m.outgoingSms).append('\n');
+        sb.append("# SUMMARY (period: ").append(period.name()).append(")\n");
+        sb.append("PeriodStart,IncomingCallTime,IncomingCallCount,OutgoingCallTime,")
+                .append("OutgoingCallCount,MissedCalls,RejectedCalls,IncomingSMS,OutgoingSMS,")
+                .append("MobileDataBytes\n");
+        for (PeriodStat p : periods) {
+            sb.append(p.start).append(',')
+                    .append(PeriodStat.formatDuration(p.incomingCallSeconds)).append(',')
+                    .append(p.incomingCallCount).append(',')
+                    .append(PeriodStat.formatDuration(p.outgoingCallSeconds)).append(',')
+                    .append(p.outgoingCallCount).append(',')
+                    .append(p.missedCalls).append(',')
+                    .append(p.rejectedCalls).append(',')
+                    .append(p.incomingSms).append(',')
+                    .append(p.outgoingSms).append(',')
+                    .append(p.mobileDataBytes >= 0 ? Long.toString(p.mobileDataBytes) : "")
+                    .append('\n');
         }
 
         sb.append('\n');
         sb.append("# DETAILS\n");
-        sb.append("Month,DateTime,Type,Contact,DurationSeconds\n");
+        sb.append("PeriodStart,DateTime,Type,Contact,DurationSeconds\n");
         for (DetailEntry e : entries) {
             ZonedDateTime z = Instant.ofEpochMilli(e.timestamp).atZone(zone);
-            sb.append(YearMonth.from(z)).append(',')
+            LocalDate periodStart = period.startOf(z.toLocalDate());
+            sb.append(periodStart).append(',')
                     .append(z.format(CSV_DATE_TIME)).append(',')
                     .append(csv(typeLabel(e.kind))).append(',')
                     .append(csv(e.contact == null ? "" : e.contact)).append(',')
@@ -73,15 +77,15 @@ public final class Exporter {
         return write(ctx, "csv", sb.toString());
     }
 
-    public static File writeJson(Context ctx, List<MonthStat> months, List<DetailEntry> entries)
-            throws IOException {
+    public static File writeJson(Context ctx, List<PeriodStat> periods,
+                                 List<DetailEntry> entries, Period period) throws IOException {
         ZoneId zone = ZoneId.systemDefault();
         try {
-            // Detaily seskupené podle měsíce.
-            Map<String, JSONArray> entriesByMonth = new HashMap<>();
+            // Detaily seskupené podle počátku období.
+            Map<String, JSONArray> entriesByPeriod = new HashMap<>();
             for (DetailEntry e : entries) {
                 ZonedDateTime z = Instant.ofEpochMilli(e.timestamp).atZone(zone);
-                String month = YearMonth.from(z).toString();
+                String key = period.startOf(z.toLocalDate()).toString();
                 JSONObject je = new JSONObject();
                 je.put("timestamp", z.format(ISO));
                 je.put("type", typeLabel(e.kind));
@@ -89,39 +93,42 @@ public final class Exporter {
                 if (e.hasDuration()) {
                     je.put("durationSeconds", e.durationSeconds);
                 }
-                JSONArray arr = entriesByMonth.get(month);
+                JSONArray arr = entriesByPeriod.get(key);
                 if (arr == null) {
                     arr = new JSONArray();
-                    entriesByMonth.put(month, arr);
+                    entriesByPeriod.put(key, arr);
                 }
                 arr.put(je);
             }
 
-            JSONArray monthsArr = new JSONArray();
-            for (MonthStat m : months) {
-                String key = m.month.toString();
+            JSONArray periodsArr = new JSONArray();
+            for (PeriodStat p : periods) {
+                String key = p.start.toString();
                 JSONObject summary = new JSONObject();
-                summary.put("incomingCallSeconds", m.incomingCallSeconds);
-                summary.put("incomingCallCount", m.incomingCallCount);
-                summary.put("outgoingCallSeconds", m.outgoingCallSeconds);
-                summary.put("outgoingCallCount", m.outgoingCallCount);
-                summary.put("missedCalls", m.missedCalls);
-                summary.put("rejectedCalls", m.rejectedCalls);
-                summary.put("incomingSms", m.incomingSms);
-                summary.put("outgoingSms", m.outgoingSms);
+                summary.put("incomingCallSeconds", p.incomingCallSeconds);
+                summary.put("incomingCallCount", p.incomingCallCount);
+                summary.put("outgoingCallSeconds", p.outgoingCallSeconds);
+                summary.put("outgoingCallCount", p.outgoingCallCount);
+                summary.put("missedCalls", p.missedCalls);
+                summary.put("rejectedCalls", p.rejectedCalls);
+                summary.put("incomingSms", p.incomingSms);
+                summary.put("outgoingSms", p.outgoingSms);
+                summary.put("mobileDataBytes",
+                        p.mobileDataBytes >= 0 ? p.mobileDataBytes : JSONObject.NULL);
 
-                JSONObject jm = new JSONObject();
-                jm.put("month", key);
-                jm.put("summary", summary);
-                JSONArray arr = entriesByMonth.get(key);
-                jm.put("entries", arr != null ? arr : new JSONArray());
-                monthsArr.put(jm);
+                JSONObject jp = new JSONObject();
+                jp.put("start", key);
+                jp.put("summary", summary);
+                JSONArray arr = entriesByPeriod.get(key);
+                jp.put("entries", arr != null ? arr : new JSONArray());
+                periodsArr.put(jp);
             }
 
             JSONObject root = new JSONObject();
             root.put("app", "Call and SMS stats");
             root.put("exportedAt", LocalDateTime.now().format(ISO));
-            root.put("months", monthsArr);
+            root.put("period", period.name());
+            root.put("periods", periodsArr);
 
             return write(ctx, "json", root.toString(2));
         } catch (JSONException ex) {

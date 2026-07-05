@@ -1,10 +1,15 @@
 package cz.jirnec.callandsmsstats;
 
 import android.Manifest;
+import android.app.AppOpsManager;
+import android.app.usage.NetworkStats;
+import android.app.usage.NetworkStatsManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
 import android.net.Uri;
+import android.os.Process;
 import android.provider.CallLog;
 import android.provider.ContactsContract;
 import android.provider.Telephony;
@@ -12,16 +17,17 @@ import android.provider.Telephony;
 import androidx.core.content.ContextCompat;
 
 import java.time.Instant;
-import java.time.YearMonth;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Načítá záznamy z deníku hovorů a SMS a agreguje je po kalendářních měsících.
+ * Načítá záznamy z deníku hovorů a SMS a agreguje je po zvoleném období.
  */
 public class StatsRepository {
 
@@ -32,33 +38,92 @@ public class StatsRepository {
     }
 
     /**
-     * Vrátí statistiky seřazené od nejnovějšího měsíce do nejstaršího.
+     * Vrátí statistiky za zvolené období, seřazené od nejnovějšího do nejstaršího.
      * Musí běžet mimo hlavní vlákno (dotazy ContentResolveru mohou trvat).
      */
-    public List<MonthStat> loadStats() {
-        Map<YearMonth, MonthStat> byMonth = new HashMap<>();
+    public List<PeriodStat> loadStats(Period period) {
+        Map<LocalDate, PeriodStat> byPeriod = new HashMap<>();
         ZoneId zone = ZoneId.systemDefault();
 
-        readCalls(byMonth, zone);
-        readSms(byMonth, zone);
+        readCalls(byPeriod, zone, period);
+        readSms(byPeriod, zone, period);
 
-        List<MonthStat> result = new ArrayList<>(byMonth.values());
-        result.sort(Comparator.comparing((MonthStat s) -> s.month).reversed());
+        if (byPeriod.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Souvislá řada období od dneška (resp. nejnovějších dat) po nejstarší data;
+        // období bez aktivity se zobrazí s nulami.
+        LocalDate oldest = Collections.min(byPeriod.keySet());
+        LocalDate newest = period.startOf(LocalDate.now(zone));
+        LocalDate newestData = Collections.max(byPeriod.keySet());
+        if (newestData.isAfter(newest)) {
+            newest = newestData;
+        }
+
+        List<PeriodStat> result = new ArrayList<>();
+        for (LocalDate cur = newest; !cur.isBefore(oldest); cur = period.startOf(cur.minusDays(1))) {
+            PeriodStat stat = byPeriod.get(cur);
+            result.add(stat != null ? stat : new PeriodStat(cur, period));
+        }
+        // Mobilní data se nedotahují tady – načítají se líně (jen pro zobrazená období),
+        // viz queryMobileData(). Pro export slouží fillMobileData().
         return result;
     }
 
-    /**
-     * Načte jednotlivé hovory a SMS daného měsíce (od nejnovějšího), tedy přesně
-     * záznamy, ze kterých vznikl souhrn pro tento měsíc.
-     */
-    public List<DetailEntry> loadEntriesForMonth(YearMonth month) {
-        ZoneId zone = ZoneId.systemDefault();
-        long start = month.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli();
-        long end = month.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli();
+    /** Zda má aplikace udělený „Usage access" (nutný pro čtení spotřeby mobilních dat). */
+    public static boolean hasUsageAccess(Context context) {
+        AppOpsManager appOps = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
+        if (appOps == null) {
+            return false;
+        }
+        int mode = appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(), context.getPackageName());
+        return mode == AppOpsManager.MODE_ALLOWED;
+    }
 
+    /**
+     * Celková mobilní data zařízení (přijatá + odeslaná) za jedno období v bajtech,
+     * nebo -1 při chybě / bez přístupu. Používá se pro líné načítání jednotlivých položek.
+     */
+    @SuppressWarnings("deprecation")
+    public long queryMobileData(PeriodStat period) {
+        NetworkStatsManager nsm =
+                (NetworkStatsManager) context.getSystemService(Context.NETWORK_STATS_SERVICE);
+        if (nsm == null) {
+            return -1;
+        }
+        ZoneId zone = ZoneId.systemDefault();
+        long start = period.start.atStartOfDay(zone).toInstant().toEpochMilli();
+        long end = period.period.next(period.start).atStartOfDay(zone).toInstant().toEpochMilli();
+        try {
+            NetworkStats.Bucket bucket = nsm.querySummaryForDevice(
+                    ConnectivityManager.TYPE_MOBILE, null, start, end);
+            if (bucket != null) {
+                return bucket.getRxBytes() + bucket.getTxBytes();
+            }
+        } catch (Exception e) {
+            // Bez přístupu nebo chyba dotazu – vrátíme -1.
+        }
+        return -1;
+    }
+
+    /** Doplní mobilní data ke všem obdobím najednou – pro export. */
+    public void fillMobileData(List<PeriodStat> periods) {
+        for (PeriodStat p : periods) {
+            p.mobileDataBytes = queryMobileData(p);
+            p.dataLoaded = true;
+        }
+    }
+
+    /**
+     * Načte jednotlivé hovory a SMS v daném časovém rozsahu (od nejnovějšího),
+     * tedy přesně záznamy, ze kterých vznikl souhrn pro dané období.
+     */
+    public List<DetailEntry> loadEntriesInRange(long startMillis, long endMillis) {
         List<DetailEntry> entries = new ArrayList<>();
-        readCallEntries(entries, start, end);
-        readSmsEntries(entries, start, end);
+        readCallEntries(entries, startMillis, endMillis);
+        readSmsEntries(entries, startMillis, endMillis);
         entries.sort(Comparator.comparingLong((DetailEntry e) -> e.timestamp).reversed());
         return entries;
     }
@@ -199,7 +264,7 @@ public class StatsRepository {
         return resolved;
     }
 
-    private void readCalls(Map<YearMonth, MonthStat> byMonth, ZoneId zone) {
+    private void readCalls(Map<LocalDate, PeriodStat> byPeriod, ZoneId zone, Period period) {
         String[] projection = {
                 CallLog.Calls.TYPE,
                 CallLog.Calls.DATE,
@@ -218,7 +283,7 @@ public class StatsRepository {
                 int type = c.getInt(typeIdx);
                 long dateMillis = c.getLong(dateIdx);
                 long duration = c.getLong(durationIdx);
-                MonthStat stat = getOrCreate(byMonth, toYearMonth(dateMillis, zone));
+                PeriodStat stat = getOrCreate(byPeriod, zone, period, dateMillis);
 
                 switch (type) {
                     case CallLog.Calls.INCOMING_TYPE:
@@ -243,7 +308,7 @@ public class StatsRepository {
         }
     }
 
-    private void readSms(Map<YearMonth, MonthStat> byMonth, ZoneId zone) {
+    private void readSms(Map<LocalDate, PeriodStat> byPeriod, ZoneId zone, Period period) {
         String[] projection = {
                 Telephony.Sms.TYPE,
                 Telephony.Sms.DATE
@@ -259,7 +324,7 @@ public class StatsRepository {
             while (c.moveToNext()) {
                 int type = c.getInt(typeIdx);
                 long dateMillis = c.getLong(dateIdx);
-                MonthStat stat = getOrCreate(byMonth, toYearMonth(dateMillis, zone));
+                PeriodStat stat = getOrCreate(byPeriod, zone, period, dateMillis);
 
                 if (type == Telephony.Sms.MESSAGE_TYPE_INBOX) {
                     stat.incomingSms += 1;
@@ -270,15 +335,14 @@ public class StatsRepository {
         }
     }
 
-    private YearMonth toYearMonth(long epochMillis, ZoneId zone) {
-        return YearMonth.from(Instant.ofEpochMilli(epochMillis).atZone(zone));
-    }
-
-    private MonthStat getOrCreate(Map<YearMonth, MonthStat> byMonth, YearMonth month) {
-        MonthStat stat = byMonth.get(month);
+    private PeriodStat getOrCreate(Map<LocalDate, PeriodStat> byPeriod, ZoneId zone,
+                                   Period period, long epochMillis) {
+        LocalDate date = Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalDate();
+        LocalDate key = period.startOf(date);
+        PeriodStat stat = byPeriod.get(key);
         if (stat == null) {
-            stat = new MonthStat(month);
-            byMonth.put(month, stat);
+            stat = new PeriodStat(key, period);
+            byPeriod.put(key, stat);
         }
         return stat;
     }

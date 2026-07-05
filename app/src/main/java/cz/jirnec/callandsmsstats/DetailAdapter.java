@@ -61,7 +61,7 @@ public class DetailAdapter extends RecyclerView.Adapter<DetailAdapter.ViewHolder
 
         if (entry.hasDuration()) {
             holder.duration.setVisibility(View.VISIBLE);
-            holder.duration.setText(MonthStat.formatDuration(entry.durationSeconds));
+            holder.duration.setText(PeriodStat.formatDuration(entry.durationSeconds));
         } else {
             holder.duration.setVisibility(View.GONE);
         }

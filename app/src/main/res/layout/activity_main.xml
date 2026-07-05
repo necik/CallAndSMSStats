@@ -13,6 +13,57 @@
         android:background="?attr/colorPrimary"
         app:titleTextColor="?attr/colorOnPrimary" />
 
+    <HorizontalScrollView
+        android:id="@+id/periodScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/periodChips"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="12dp"
+            app:selectionRequired="true"
+            app:singleLine="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/periodDay"
+                style="@style/Widget.App.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:tag="DAY"
+                android:text="@string/period_day" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/periodWeek"
+                style="@style/Widget.App.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:tag="WEEK"
+                android:text="@string/period_week" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/periodMonth"
+                style="@style/Widget.App.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:tag="MONTH"
+                android:text="@string/period_month" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/periodYear"
+                style="@style/Widget.App.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:tag="YEAR"
+                android:text="@string/period_year" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+    </HorizontalScrollView>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -35,6 +86,14 @@
             android:gravity="center"
             android:padding="24dp"
             android:textSize="16sp"
+            android:visibility="gone" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true"
             android:visibility="gone" />
 
     </FrameLayout>

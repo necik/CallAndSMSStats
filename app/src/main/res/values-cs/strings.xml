@@ -10,6 +10,17 @@
     <string name="permissions_required">Bez oprávnění ke čtení hovorů a SMS nelze statistiky zobrazit.</string>
     <string name="no_data">Žádná data k zobrazení.</string>
 
+    <string name="period_day">Den</string>
+    <string name="period_week">Týden</string>
+    <string name="period_month">Měsíc</string>
+    <string name="period_year">Rok</string>
+
+    <string name="mobile_data">Mobilní data</string>
+    <string name="usage_access_title">Mobilní data</string>
+    <string name="usage_access_message">Pro zobrazení spotřeby mobilních dat povolte této aplikaci „Přístup k údajům o používání“ v Nastavení. Hovory a SMS fungují i bez něj.</string>
+    <string name="usage_access_enable">Otevřít nastavení</string>
+    <string name="action_later">Později</string>
+
     <string name="detail_incoming_call">Příchozí hovor</string>
     <string name="detail_outgoing_call">Odchozí hovor</string>
     <string name="detail_missed_call">Zmeškaný hovor</string>
