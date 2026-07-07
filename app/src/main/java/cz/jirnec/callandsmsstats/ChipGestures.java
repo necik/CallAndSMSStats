@@ -33,6 +33,11 @@ public final class ChipGestures {
                         if (e1 == null || e2 == null) {
                             return false;
                         }
+                        // Gesto, které začalo přímo na pásu čipů, ignorujeme –
+                        // ať zůstane zachované vodorovné rolování pásu.
+                        if (startedOnChipStrip(group, e1)) {
+                            return false;
+                        }
                         float dx = e2.getX() - e1.getX();
                         float dy = e2.getY() - e1.getY();
                         if (Math.abs(dx) > Math.abs(dy)
@@ -44,6 +49,19 @@ public final class ChipGestures {
                         return false;
                     }
                 });
+    }
+
+    /** Začalo gesto ve svislém pásmu pásu čipů (jeho scrollovacího rodiče)? */
+    private static boolean startedOnChipStrip(ChipGroup group, MotionEvent start) {
+        View strip = (View) group.getParent();
+        if (strip == null) {
+            return false;
+        }
+        int[] loc = new int[2];
+        strip.getLocationOnScreen(loc);
+        float top = loc[1];
+        float bottom = top + strip.getHeight();
+        return start.getRawY() >= top && start.getRawY() <= bottom;
     }
 
     private static void move(View feedbackView, ChipGroup group, int direction) {

@@ -16,6 +16,11 @@
     <string name="period_year">Rok</string>
 
     <string name="mobile_data">Mobilní data</string>
+    <string name="data_empty">V tomto období žádná mobilní data.</string>
+    <string name="data_needs_usage_access">Klepnutím povolte Přístup k údajům o používání pro mobilní data.</string>
+    <string name="data_removed_apps">Odstraněné aplikace</string>
+    <string name="data_tethering">Sdílené připojení</string>
+    <string name="data_android_os">Systém Android</string>
     <string name="usage_access_title">Mobilní data</string>
     <string name="usage_access_message">Pro zobrazení spotřeby mobilních dat povolte této aplikaci „Přístup k údajům o používání“ v Nastavení. Hovory a SMS fungují i bez něj.</string>
     <string name="usage_access_enable">Otevřít nastavení</string>
@@ -28,7 +33,7 @@
     <string name="detail_incoming_sms">Příchozí SMS</string>
     <string name="detail_outgoing_sms">Odchozí SMS</string>
     <string name="detail_unknown_number">Neznámé číslo</string>
-    <string name="detail_empty">V tomto měsíci nejsou žádné záznamy.</string>
+    <string name="detail_empty">V tomto období nejsou žádné záznamy.</string>
     <string name="filter_empty">Žádné záznamy tohoto typu.</string>
 
     <string name="filter_all">Vše</string>

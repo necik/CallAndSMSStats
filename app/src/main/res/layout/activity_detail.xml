@@ -86,6 +86,14 @@
                 android:tag="5"
                 android:text="@string/filter_outgoing_sms" />
 
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipMobileData"
+                style="@style/Widget.App.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:tag="100"
+                android:text="@string/mobile_data" />
+
         </com.google.android.material.chip.ChipGroup>
 
     </HorizontalScrollView>

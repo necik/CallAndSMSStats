@@ -1,10 +1,13 @@
 package cz.jirnec.callandsmsstats;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.HorizontalScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBar;
@@ -36,16 +39,19 @@ public class DetailActivity extends AppCompatActivity {
 
     /** Hodnota tagu chipu "Vše" – žádné filtrování podle typu. */
     private static final int FILTER_ALL = -1;
+    /** Hodnota tagu chipu "Mobilní data" – rozpad dat po aplikacích. */
+    private static final int FILTER_DATA = 100;
 
     private static final String PREFS = "detail_prefs";
     private static final String KEY_FILTER = "last_filter";
 
     private final DetailAdapter adapter = new DetailAdapter();
+    private final AppDataAdapter appDataAdapter = new AppDataAdapter();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private RecyclerView recyclerView;
     private TextView emptyView;
-    private View filterScroll;
+    private HorizontalScrollView filterScroll;
     private SwipeRefreshLayout swipeRefresh;
     private ChipGroup filterChips;
     private GestureDetector chipSwipe;
@@ -85,6 +91,7 @@ public class DetailActivity extends AppCompatActivity {
         filterChips = findViewById(R.id.filterChips);
         chipSwipe = ChipGestures.detector(recyclerView, filterChips);
         selectChip(prefs.getInt(KEY_FILTER, FILTER_ALL));
+        filterScroll.post(this::scrollToCheckedChip);
         filterChips.setOnCheckedStateChangeListener((group, checkedIds) -> {
             int filter = currentFilter();
             prefs.edit().putInt(KEY_FILTER, filter).apply();
@@ -110,15 +117,10 @@ public class DetailActivity extends AppCompatActivity {
             runOnUiThread(() -> {
                 swipeRefresh.setRefreshing(false);
                 allEntries = entries;
-                if (entries.isEmpty()) {
-                    filterScroll.setVisibility(View.GONE);
-                    recyclerView.setVisibility(View.GONE);
-                    emptyView.setText(R.string.detail_empty);
-                    emptyView.setVisibility(View.VISIBLE);
-                } else {
-                    filterScroll.setVisibility(View.VISIBLE);
-                    applyFilter(currentFilter());
-                }
+                // Chipy necháváme vždy zobrazené – i při prázdných hovorech/SMS
+                // může být k dispozici čip Mobilní data.
+                filterScroll.setVisibility(View.VISIBLE);
+                applyFilter(currentFilter());
             });
         });
     }
@@ -134,6 +136,18 @@ public class DetailActivity extends AppCompatActivity {
         }
     }
 
+    /** Odroluje pás čipů tak, aby byl vidět aktuálně vybraný chip. */
+    private void scrollToCheckedChip() {
+        int checkedId = filterChips.getCheckedChipId();
+        if (checkedId == View.NO_ID) {
+            return;
+        }
+        View chip = filterChips.findViewById(checkedId);
+        if (chip != null) {
+            filterScroll.smoothScrollTo(Math.max(0, chip.getLeft() - 32), 0);
+        }
+    }
+
     /** Vrátí tag aktuálně zaškrtnutého chipu (FILTER_ALL nebo některý DetailEntry kind). */
     private int currentFilter() {
         int checkedId = filterChips.getCheckedChipId();
@@ -145,9 +159,20 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void applyFilter(int kind) {
+        if (kind == FILTER_DATA) {
+            showAppData();
+            return;
+        }
         if (allEntries == null) {
             return;
         }
+        // Režim událostí – správný adaptér a zrušení případného odkazu na Nastavení.
+        if (recyclerView.getAdapter() != adapter) {
+            recyclerView.setAdapter(adapter);
+        }
+        emptyView.setOnClickListener(null);
+        emptyView.setClickable(false);
+
         List<DetailEntry> filtered;
         if (kind == FILTER_ALL) {
             filtered = allEntries;
@@ -162,12 +187,55 @@ public class DetailActivity extends AppCompatActivity {
 
         if (filtered.isEmpty()) {
             recyclerView.setVisibility(View.GONE);
-            emptyView.setText(R.string.filter_empty);
+            emptyView.setText(kind == FILTER_ALL ? R.string.detail_empty : R.string.filter_empty);
             emptyView.setVisibility(View.VISIBLE);
         } else {
             emptyView.setVisibility(View.GONE);
             recyclerView.setVisibility(View.VISIBLE);
             adapter.setItems(filtered);
+        }
+    }
+
+    /** Zobrazí rozpad mobilních dat po aplikacích za dané období. */
+    private void showAppData() {
+        if (recyclerView.getAdapter() != appDataAdapter) {
+            recyclerView.setAdapter(appDataAdapter);
+        }
+        if (!StatsRepository.hasUsageAccess(this)) {
+            recyclerView.setVisibility(View.GONE);
+            emptyView.setText(R.string.data_needs_usage_access);
+            emptyView.setOnClickListener(v ->
+                    startActivity(new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)));
+            emptyView.setClickable(true);
+            emptyView.setVisibility(View.VISIBLE);
+            return;
+        }
+        emptyView.setOnClickListener(null);
+        emptyView.setClickable(false);
+
+        StatsRepository repository = new StatsRepository(this);
+        executor.execute(() -> {
+            final List<AppDataUsage> usage = repository.loadMobileDataByApp(rangeStart, rangeEnd);
+            runOnUiThread(() -> {
+                if (usage.isEmpty()) {
+                    recyclerView.setVisibility(View.GONE);
+                    emptyView.setText(R.string.data_empty);
+                    emptyView.setVisibility(View.VISIBLE);
+                } else {
+                    emptyView.setVisibility(View.GONE);
+                    recyclerView.setVisibility(View.VISIBLE);
+                    appDataAdapter.setItems(usage);
+                }
+            });
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Po návratu z Nastavení (Usage access) v režimu Mobilní data přenačteme.
+        if (allEntries != null && currentFilter() == FILTER_DATA) {
+            applyFilter(FILTER_DATA);
         }
     }
 

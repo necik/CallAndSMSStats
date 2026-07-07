@@ -5,6 +5,7 @@ import android.app.AppOpsManager;
 import android.app.usage.NetworkStats;
 import android.app.usage.NetworkStatsManager;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
@@ -114,6 +115,75 @@ public class StatsRepository {
             p.mobileDataBytes = queryMobileData(p);
             p.dataLoaded = true;
         }
+    }
+
+    /**
+     * Rozpad spotřeby mobilních dat po aplikacích za daný rozsah (sestupně).
+     * Vyžaduje Usage access; bez něj / při chybě vrátí prázdný seznam.
+     */
+    @SuppressWarnings("deprecation")
+    public List<AppDataUsage> loadMobileDataByApp(long startMillis, long endMillis) {
+        List<AppDataUsage> result = new ArrayList<>();
+        NetworkStatsManager nsm =
+                (NetworkStatsManager) context.getSystemService(Context.NETWORK_STATS_SERVICE);
+        if (nsm == null) {
+            return result;
+        }
+
+        Map<Integer, Long> bytesByUid = new HashMap<>();
+        NetworkStats stats = null;
+        try {
+            stats = nsm.querySummary(ConnectivityManager.TYPE_MOBILE, null, startMillis, endMillis);
+            NetworkStats.Bucket bucket = new NetworkStats.Bucket();
+            while (stats.hasNextBucket()) {
+                stats.getNextBucket(bucket);
+                int uid = bucket.getUid();
+                long bytes = bucket.getRxBytes() + bucket.getTxBytes();
+                Long current = bytesByUid.get(uid);
+                bytesByUid.put(uid, (current == null ? 0L : current) + bytes);
+            }
+        } catch (Exception e) {
+            return result;
+        } finally {
+            if (stats != null) {
+                stats.close();
+            }
+        }
+
+        PackageManager pm = context.getPackageManager();
+        for (Map.Entry<Integer, Long> entry : bytesByUid.entrySet()) {
+            if (entry.getValue() <= 0) {
+                continue;
+            }
+            result.add(new AppDataUsage(appLabelForUid(pm, entry.getKey()), entry.getValue()));
+        }
+        result.sort((a, b) -> Long.compare(b.bytes, a.bytes));
+        return result;
+    }
+
+    private String appLabelForUid(PackageManager pm, int uid) {
+        switch (uid) {
+            case NetworkStats.Bucket.UID_REMOVED:
+                return context.getString(R.string.data_removed_apps);
+            case NetworkStats.Bucket.UID_TETHERING:
+                return context.getString(R.string.data_tethering);
+            default:
+                break;
+        }
+        if (uid == Process.SYSTEM_UID) {
+            return context.getString(R.string.data_android_os);
+        }
+        String[] packages = pm.getPackagesForUid(uid);
+        if (packages != null && packages.length > 0) {
+            try {
+                ApplicationInfo info = pm.getApplicationInfo(packages[0], 0);
+                return pm.getApplicationLabel(info).toString();
+            } catch (PackageManager.NameNotFoundException ignored) {
+                return packages[0];
+            }
+        }
+        String name = pm.getNameForUid(uid);
+        return name != null ? name : "UID " + uid;
     }
 
     /**

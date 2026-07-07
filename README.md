@@ -33,12 +33,14 @@ locale (e.g. day with weekday, week as a date range, "June 2026", "2026").
 Tapping a period opens a chronological list (newest first) of the individual
 calls and SMS the summary was built from — handy for verifying the numbers on
 the card. Each record shows the type, contact/number, date and time, and for
-completed calls also the duration. (Mobile data has no per-event records, so it
-appears only in the summary, not here.)
+completed calls also the duration.
 
 - **Quick filtering** by event type (chips): All, Incoming calls, Outgoing
   calls, Missed, Rejected, Incoming SMS, Outgoing SMS. The last selected filter
   is remembered (even after a restart).
+- **Mobile data** chip: shows the period's mobile-data usage **broken down by
+  app** (device-wide, per UID, largest first) instead of the event list. Requires
+  "Usage access" (tap the hint to enable it). Not shown under "All".
 - **Names for SMS**: if the sender is a phone number stored in contacts, the
   name is shown; an alphanumeric sender ID (e.g. "Vodafone") and numbers not in
   the address book are kept as-is. For calls the name comes from the call log
@@ -74,6 +76,7 @@ Both screens support:
 | `READ_SMS` | SMS counts | yes |
 | `READ_CONTACTS` | names for SMS from the address book | no (number is shown without it) |
 | `PACKAGE_USAGE_STATS` ("Usage access") | mobile data usage per period | no (data shows "—" without it) |
+| `QUERY_ALL_PACKAGES` | resolve app names in the per-app data breakdown | install-time (no prompt) |
 
 The app requests the runtime permissions on launch. `PACKAGE_USAGE_STATS` is a
 special access that cannot be granted by a normal dialog — it must be enabled
@@ -82,9 +85,9 @@ offers to open that screen (once), and while it is off, the mobile-data value is
 a tappable "—" that opens the same screen; once enabled, the list refreshes
 automatically.
 
-Note: Google Play heavily restricts `READ_CALL_LOG` and `READ_SMS` — publishing
-on Play would require special approval. There is no such restriction for private
-(sideload) installation.
+Note: Google Play heavily restricts `READ_CALL_LOG`, `READ_SMS` and
+`QUERY_ALL_PACKAGES` — publishing on Play would require special approval. There
+is no such restriction for private (sideload) installation.
 
 ## Privacy
 
@@ -98,8 +101,9 @@ sending call and SMS data anywhere.
 - Data leaves the device **only when you explicitly export it** and choose a
   destination yourself in the system share sheet (see [Data export](#data-export)).
 - The optional "Usage access" permission is broader than the rest (it can expose
-  app-usage statistics), but since the app has no internet, nothing read through
-  it can leave the device either. It stays off unless you enable it.
+  app-usage statistics), and `QUERY_ALL_PACKAGES` lets the app see the list of
+  installed apps (used only to label the per-app data breakdown). Since the app
+  has no internet, nothing read through them can leave the device either.
 
 ## Technical details
 

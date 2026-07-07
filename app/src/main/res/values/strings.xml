@@ -16,6 +16,11 @@
     <string name="period_year">Year</string>
 
     <string name="mobile_data">Mobile data</string>
+    <string name="data_empty">No mobile data this period.</string>
+    <string name="data_needs_usage_access">Tap to enable Usage access for mobile data.</string>
+    <string name="data_removed_apps">Removed apps</string>
+    <string name="data_tethering">Tethering</string>
+    <string name="data_android_os">Android OS</string>
     <string name="usage_access_title">Mobile data</string>
     <string name="usage_access_message">To show mobile data usage, enable “Usage access” for this app in Settings. Calls and SMS work without it.</string>
     <string name="usage_access_enable">Open settings</string>
@@ -31,7 +36,7 @@
     <string name="detail_incoming_sms">Incoming SMS</string>
     <string name="detail_outgoing_sms">Outgoing SMS</string>
     <string name="detail_unknown_number">Unknown number</string>
-    <string name="detail_empty">No records this month.</string>
+    <string name="detail_empty">No records this period.</string>
     <string name="filter_empty">No records of this type.</string>
 
     <string name="filter_all">All</string>
