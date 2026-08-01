@@ -7,6 +7,8 @@
     <string name="rejected_calls">Odmítnuté hovory</string>
     <string name="incoming_sms">Příchozí SMS</string>
     <string name="outgoing_sms">Odchozí SMS</string>
+    <string name="incoming_mms">Příchozí MMS/RCS</string>
+    <string name="outgoing_mms">Odchozí MMS/RCS</string>
     <string name="permissions_required">Bez oprávnění ke čtení hovorů a SMS nelze statistiky zobrazit.</string>
     <string name="no_data">Žádná data k zobrazení.</string>
 
@@ -32,6 +34,8 @@
     <string name="detail_rejected_call">Odmítnutý hovor</string>
     <string name="detail_incoming_sms">Příchozí SMS</string>
     <string name="detail_outgoing_sms">Odchozí SMS</string>
+    <string name="detail_incoming_mms">Příchozí MMS/RCS</string>
+    <string name="detail_outgoing_mms">Odchozí MMS/RCS</string>
     <string name="detail_unknown_number">Neznámé číslo</string>
     <string name="detail_empty">V tomto období nejsou žádné záznamy.</string>
     <string name="filter_empty">Žádné záznamy tohoto typu.</string>
@@ -43,6 +47,11 @@
     <string name="filter_rejected">Odmítnuté</string>
     <string name="filter_incoming_sms">Příchozí SMS</string>
     <string name="filter_outgoing_sms">Odchozí SMS</string>
+    <string name="filter_incoming_mms">Příchozí MMS/RCS</string>
+    <string name="filter_outgoing_mms">Odchozí MMS/RCS</string>
+
+    <string name="sim_all">Vše</string>
+    <string name="data_no_per_sim">Mobilní data nelze rozdělit po SIM.</string>
 
     <string name="action_export">Export</string>
     <string name="export_choose_format">Formát exportu</string>

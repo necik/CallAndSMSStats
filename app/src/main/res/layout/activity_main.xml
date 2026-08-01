@@ -14,6 +14,24 @@
         app:titleTextColor="?attr/colorOnPrimary" />
 
     <HorizontalScrollView
+        android:id="@+id/simScroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:visibility="gone">
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/simChips"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="12dp"
+            app:selectionRequired="true"
+            app:singleLine="true"
+            app:singleSelection="true" />
+
+    </HorizontalScrollView>
+
+    <HorizontalScrollView
         android:id="@+id/periodScroll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

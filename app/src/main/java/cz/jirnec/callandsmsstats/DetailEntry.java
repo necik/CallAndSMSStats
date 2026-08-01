@@ -11,6 +11,8 @@ public class DetailEntry {
     public static final int REJECTED_CALL = 3;
     public static final int INCOMING_SMS = 4;
     public static final int OUTGOING_SMS = 5;
+    public static final int INCOMING_MMS = 6;
+    public static final int OUTGOING_MMS = 7;
 
     public int kind;
     public long timestamp;

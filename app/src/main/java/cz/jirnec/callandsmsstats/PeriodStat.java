@@ -19,6 +19,8 @@ public class PeriodStat {
     public int rejectedCalls;
     public int incomingSms;
     public int outgoingSms;
+    public int incomingMms;
+    public int outgoingMms;
     /** Mobilní data (přijatá + odeslaná) v bajtech; -1 = neznámo/nedostupné. */
     public long mobileDataBytes = -1;
     /** Byla už mobilní data pro toto období dotažena? (líné načítání) */

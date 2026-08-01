@@ -36,6 +36,8 @@ public class DetailActivity extends AppCompatActivity {
     public static final String EXTRA_START = "start";
     public static final String EXTRA_END = "end";
     public static final String EXTRA_PERIOD = "period";
+    /** subId vybrané SIM; -1 = všechny SIM. */
+    public static final String EXTRA_SUB_ID = "sub_id";
 
     /** Hodnota tagu chipu "Vše" – žádné filtrování podle typu. */
     private static final int FILTER_ALL = -1;
@@ -59,6 +61,7 @@ public class DetailActivity extends AppCompatActivity {
     private SharedPreferences prefs;
     private long rangeStart;
     private long rangeEnd;
+    private Integer simSubId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,6 +105,8 @@ public class DetailActivity extends AppCompatActivity {
 
         rangeStart = getIntent().getLongExtra(EXTRA_START, 0);
         rangeEnd = getIntent().getLongExtra(EXTRA_END, 0);
+        int sub = getIntent().getIntExtra(EXTRA_SUB_ID, -1);
+        simSubId = sub < 0 ? null : sub;
         Period period = Period.valueOf(getIntent().getStringExtra(EXTRA_PERIOD));
         LocalDate startDate = Instant.ofEpochMilli(rangeStart)
                 .atZone(ZoneId.systemDefault()).toLocalDate();
@@ -113,7 +118,8 @@ public class DetailActivity extends AppCompatActivity {
     private void loadEntries(long startMillis, long endMillis) {
         StatsRepository repository = new StatsRepository(this);
         executor.execute(() -> {
-            final List<DetailEntry> entries = repository.loadEntriesInRange(startMillis, endMillis);
+            final List<DetailEntry> entries =
+                    repository.loadEntriesInRange(startMillis, endMillis, simSubId);
             runOnUiThread(() -> {
                 swipeRefresh.setRefreshing(false);
                 allEntries = entries;
@@ -200,6 +206,15 @@ public class DetailActivity extends AppCompatActivity {
     private void showAppData() {
         if (recyclerView.getAdapter() != appDataAdapter) {
             recyclerView.setAdapter(appDataAdapter);
+        }
+        if (simSubId != null) {
+            // Mobilní data nejde rozdělit po SIM.
+            recyclerView.setVisibility(View.GONE);
+            emptyView.setOnClickListener(null);
+            emptyView.setClickable(false);
+            emptyView.setText(R.string.data_no_per_sim);
+            emptyView.setVisibility(View.VISIBLE);
+            return;
         }
         if (!StatsRepository.hasUsageAccess(this)) {
             recyclerView.setVisibility(View.GONE);

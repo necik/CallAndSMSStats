@@ -19,7 +19,14 @@ chips at the top switches the aggregation period — **Day / Week / Month / Year
 - number of rejected calls,
 - number of incoming SMS,
 - number of outgoing SMS,
+- number of incoming and outgoing MMS/RCS messages,
 - total mobile data used (received + sent; see [Permissions](#permissions)).
+
+On dual-SIM phones a second chip row above the period chips lets you filter by
+**SIM** (All / individual SIMs); the choice also carries into the detail. It
+applies to calls, SMS and MMS/RCS (SMS/MMS exactly via `sub_id`, calls best-effort
+via the phone account). Mobile data can't be attributed to a single SIM, so it
+shows "—" while a specific SIM is selected.
 
 Periods with no activity are still shown (with zeros), so the list is continuous
 from the current period back to the oldest data. Period labels follow the device
@@ -28,6 +35,10 @@ locale (e.g. day with weekday, week as a date range, "June 2026", "2026").
 > Note: Some manufacturer Android skins store rejected calls inconsistently
 > (they are sometimes recorded as missed), so the split between missed and
 > rejected depends on how the specific device classifies them.
+>
+> "MMS/RCS" is a single combined count: delivery reports and notifications are
+> excluded, but RCS messages that a device stores in the MMS database can't be
+> reliably told apart from real MMS, so they are counted together.
 
 ### Period detail
 Tapping a period opens a chronological list (newest first) of the individual
@@ -35,9 +46,10 @@ calls and SMS the summary was built from — handy for verifying the numbers on
 the card. Each record shows the type, contact/number, date and time, and for
 completed calls also the duration.
 
-- **Quick filtering** by event type (chips): All, Incoming calls, Outgoing
-  calls, Missed, Rejected, Incoming SMS, Outgoing SMS. The last selected filter
-  is remembered (even after a restart).
+- **Quick filtering** by event type (chips): All, Incoming/Outgoing calls,
+  Missed, Rejected, Incoming/Outgoing SMS, Incoming/Outgoing MMS/RCS. The last
+  selected filter is remembered (even after a restart). The SIM filter selected
+  on the main screen also applies here.
 - **Mobile data** chip: shows the period's mobile-data usage **broken down by
   app** (device-wide, per UID, largest first) instead of the event list. Requires
   "Usage access" (tap the hint to enable it). Not shown under "All".
@@ -75,6 +87,7 @@ Both screens support:
 | `READ_CALL_LOG` | call durations and types | yes |
 | `READ_SMS` | SMS counts | yes |
 | `READ_CONTACTS` | names for SMS from the address book | no (number is shown without it) |
+| `READ_PHONE_STATE` | list SIM cards for the per-SIM filter | no (SIM row is hidden without it) |
 | `PACKAGE_USAGE_STATS` ("Usage access") | mobile data usage per period | no (data shows "—" without it) |
 | `QUERY_ALL_PACKAGES` | resolve app names in the per-app data breakdown | install-time (no prompt) |
 

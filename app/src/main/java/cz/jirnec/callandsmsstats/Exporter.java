@@ -45,7 +45,7 @@ public final class Exporter {
         sb.append("# SUMMARY (period: ").append(period.name()).append(")\n");
         sb.append("PeriodStart,IncomingCallTime,IncomingCallCount,OutgoingCallTime,")
                 .append("OutgoingCallCount,MissedCalls,RejectedCalls,IncomingSMS,OutgoingSMS,")
-                .append("MobileDataBytes\n");
+                .append("IncomingMMS,OutgoingMMS,MobileDataBytes\n");
         for (PeriodStat p : periods) {
             sb.append(p.start).append(',')
                     .append(PeriodStat.formatDuration(p.incomingCallSeconds)).append(',')
@@ -56,6 +56,8 @@ public final class Exporter {
                     .append(p.rejectedCalls).append(',')
                     .append(p.incomingSms).append(',')
                     .append(p.outgoingSms).append(',')
+                    .append(p.incomingMms).append(',')
+                    .append(p.outgoingMms).append(',')
                     .append(p.mobileDataBytes >= 0 ? Long.toString(p.mobileDataBytes) : "")
                     .append('\n');
         }
@@ -113,6 +115,8 @@ public final class Exporter {
                 summary.put("rejectedCalls", p.rejectedCalls);
                 summary.put("incomingSms", p.incomingSms);
                 summary.put("outgoingSms", p.outgoingSms);
+                summary.put("incomingMms", p.incomingMms);
+                summary.put("outgoingMms", p.outgoingMms);
                 summary.put("mobileDataBytes",
                         p.mobileDataBytes >= 0 ? p.mobileDataBytes : JSONObject.NULL);
 
@@ -166,6 +170,10 @@ public final class Exporter {
                 return "Incoming SMS";
             case DetailEntry.OUTGOING_SMS:
                 return "Outgoing SMS";
+            case DetailEntry.INCOMING_MMS:
+                return "Incoming MMS/RCS";
+            case DetailEntry.OUTGOING_MMS:
+                return "Outgoing MMS/RCS";
             default:
                 return "";
         }

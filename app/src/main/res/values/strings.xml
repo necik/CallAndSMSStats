@@ -7,6 +7,8 @@
     <string name="rejected_calls">Rejected calls</string>
     <string name="incoming_sms">Incoming SMS</string>
     <string name="outgoing_sms">Outgoing SMS</string>
+    <string name="incoming_mms">Incoming MMS/RCS</string>
+    <string name="outgoing_mms">Outgoing MMS/RCS</string>
     <string name="permissions_required">Statistics can\'t be shown without permission to read calls and SMS.</string>
     <string name="no_data">No data to display.</string>
 
@@ -35,6 +37,8 @@
     <string name="detail_rejected_call">Rejected call</string>
     <string name="detail_incoming_sms">Incoming SMS</string>
     <string name="detail_outgoing_sms">Outgoing SMS</string>
+    <string name="detail_incoming_mms">Incoming MMS/RCS</string>
+    <string name="detail_outgoing_mms">Outgoing MMS/RCS</string>
     <string name="detail_unknown_number">Unknown number</string>
     <string name="detail_empty">No records this period.</string>
     <string name="filter_empty">No records of this type.</string>
@@ -46,6 +50,11 @@
     <string name="filter_rejected">Rejected</string>
     <string name="filter_incoming_sms">Incoming SMS</string>
     <string name="filter_outgoing_sms">Outgoing SMS</string>
+    <string name="filter_incoming_mms">Incoming MMS/RCS</string>
+    <string name="filter_outgoing_mms">Outgoing MMS/RCS</string>
+
+    <string name="sim_all">All</string>
+    <string name="data_no_per_sim">Mobile data can\'t be split per SIM.</string>
 
     <string name="action_export">Export</string>
     <string name="export_choose_format">Export format</string>

@@ -43,7 +43,7 @@ import java.util.concurrent.Executors;
 public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_PERMISSIONS = 100;
-    private static final int REQ_CONTACTS = 101;
+    private static final int REQ_OPTIONAL = 101;
 
     /** Povinná oprávnění – bez nich nelze statistiky vůbec sestavit. */
     private static final String[] REQUIRED_PERMISSIONS = {
@@ -51,16 +51,25 @@ public class MainActivity extends AppCompatActivity {
             Manifest.permission.READ_SMS
     };
 
-    /** Žádáme i kontakty (pro jména u SMS), ale jsou nepovinné. */
+    /** Nepovinná: kontakty (jména u SMS) a stav telefonu (výčet SIM). */
+    private static final String[] OPTIONAL_PERMISSIONS = {
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.READ_PHONE_STATE
+    };
+
+    /** Vše žádané při prvním spuštění (povinná + nepovinná). */
     private static final String[] REQUESTED_PERMISSIONS = {
             Manifest.permission.READ_CALL_LOG,
             Manifest.permission.READ_SMS,
-            Manifest.permission.READ_CONTACTS
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.READ_PHONE_STATE
     };
 
     private static final String PREFS = "main_prefs";
     private static final String KEY_PERIOD = "period";
+    private static final String KEY_SIM = "sim_sub";
     private static final String KEY_ASKED_USAGE = "asked_usage_access";
+    private static final String SIM_ALL_TAG = "all";
 
     private final PeriodStatsAdapter adapter = new PeriodStatsAdapter();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -71,6 +80,8 @@ public class MainActivity extends AppCompatActivity {
     private View progressBar;
     private SwipeRefreshLayout swipeRefresh;
     private ChipGroup periodChips;
+    private View simScroll;
+    private ChipGroup simChips;
     private GestureDetector chipSwipe;
     private SharedPreferences prefs;
     private boolean usageAccessAtLastLoad;
@@ -114,9 +125,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        simScroll = findViewById(R.id.simScroll);
+        simChips = findViewById(R.id.simChips);
+        buildSimRow();
+
         if (hasRequiredPermissions()) {
             loadStats();
-            requestContactsIfNeeded();
+            requestOptionalIfNeeded();
             promptUsageAccessIfNeeded();
         } else {
             ActivityCompat.requestPermissions(this, REQUESTED_PERMISSIONS, REQ_PERMISSIONS);
@@ -156,12 +171,17 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    /** Nepovinné: požádá o kontakty kvůli jménům u SMS, pokud ještě nejsou povolené. */
-    private void requestContactsIfNeeded() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.READ_CONTACTS}, REQ_CONTACTS);
+    /** Nepovinné: požádá o kontakty (jména u SMS) a stav telefonu (SIM), pokud chybí. */
+    private void requestOptionalIfNeeded() {
+        java.util.List<String> missing = new java.util.ArrayList<>();
+        for (String permission : OPTIONAL_PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(this, permission)
+                    != PackageManager.PERMISSION_GRANTED) {
+                missing.add(permission);
+            }
+        }
+        if (!missing.isEmpty()) {
+            ActivityCompat.requestPermissions(this, missing.toArray(new String[0]), REQ_OPTIONAL);
         }
     }
 
@@ -180,26 +200,35 @@ public class MainActivity extends AppCompatActivity {
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQ_PERMISSIONS) {
+            buildSimRow();
             if (hasRequiredPermissions()) {
                 loadStats();
                 promptUsageAccessIfNeeded();
             } else {
                 showMessage(getString(R.string.permissions_required));
             }
+        } else if (requestCode == REQ_OPTIONAL) {
+            // Kontakty → jména u SMS; stav telefonu → výčet SIM.
+            buildSimRow();
+            if (hasRequiredPermissions()) {
+                loadStats();
+            }
         }
     }
 
     private void loadStats() {
         Period period = currentPeriod();
+        Integer sim = currentSim();
         usageAccessAtLastLoad = StatsRepository.hasUsageAccess(this);
         adapter.setUsageAccessGranted(usageAccessAtLastLoad);
+        adapter.setDataPerSimUnavailable(sim != null);
         // Při pull-to-refresh ukazuje spinner SwipeRefreshLayout, nedublujeme středový.
         if (!swipeRefresh.isRefreshing()) {
             progressBar.setVisibility(View.VISIBLE);
         }
         StatsRepository repository = new StatsRepository(this);
         executor.execute(() -> {
-            final List<PeriodStat> stats = repository.loadStats(period);
+            final List<PeriodStat> stats = repository.loadStats(period, sim);
             runOnUiThread(() -> {
                 progressBar.setVisibility(View.GONE);
                 swipeRefresh.setRefreshing(false);
@@ -227,10 +256,12 @@ public class MainActivity extends AppCompatActivity {
         ZoneId zone = ZoneId.systemDefault();
         long start = stat.start.atStartOfDay(zone).toInstant().toEpochMilli();
         long end = stat.period.next(stat.start).atStartOfDay(zone).toInstant().toEpochMilli();
+        Integer sim = currentSim();
         Intent intent = new Intent(this, DetailActivity.class);
         intent.putExtra(DetailActivity.EXTRA_START, start);
         intent.putExtra(DetailActivity.EXTRA_END, end);
         intent.putExtra(DetailActivity.EXTRA_PERIOD, stat.period.name());
+        intent.putExtra(DetailActivity.EXTRA_SUB_ID, sim != null ? sim : -1);
         startActivity(intent);
     }
 
@@ -251,6 +282,74 @@ public class MainActivity extends AppCompatActivity {
                 ((Chip) child).setChecked(true);
                 return;
             }
+        }
+    }
+
+    /** Sestaví řadu čipů SIM (Vše + jednotlivé SIM). Zobrazí se jen při 2+ SIM. */
+    private void buildSimRow() {
+        java.util.List<Sims.SimInfo> sims = Sims.active(this);
+        simChips.setOnCheckedStateChangeListener(null);
+        simChips.removeAllViews();
+        if (sims.size() < 2) {
+            simScroll.setVisibility(View.GONE);
+            return;
+        }
+        simScroll.setVisibility(View.VISIBLE);
+        addSimChip(getString(R.string.sim_all), SIM_ALL_TAG);
+        for (Sims.SimInfo sim : sims) {
+            addSimChip(sim.label, String.valueOf(sim.subId));
+        }
+        selectSimChip(prefs.getInt(KEY_SIM, -1), sims);
+        simChips.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            Integer sim = currentSim();
+            prefs.edit().putInt(KEY_SIM, sim != null ? sim : -1).apply();
+            loadStats();
+        });
+    }
+
+    private void addSimChip(String label, String tag) {
+        Chip chip = (Chip) getLayoutInflater().inflate(R.layout.view_filter_chip, simChips, false);
+        chip.setId(View.generateViewId());
+        chip.setText(label);
+        chip.setTag(tag);
+        simChips.addView(chip);
+    }
+
+    private void selectSimChip(int savedSub, java.util.List<Sims.SimInfo> sims) {
+        String targetTag = SIM_ALL_TAG;
+        for (Sims.SimInfo sim : sims) {
+            if (sim.subId == savedSub) {
+                targetTag = String.valueOf(savedSub);
+                break;
+            }
+        }
+        for (int i = 0; i < simChips.getChildCount(); i++) {
+            View child = simChips.getChildAt(i);
+            if (child instanceof Chip && targetTag.equals(child.getTag())) {
+                ((Chip) child).setChecked(true);
+                return;
+            }
+        }
+    }
+
+    /** Vybraná SIM (subId), nebo null pro „Vše" / skrytou řadu. */
+    private Integer currentSim() {
+        if (simScroll.getVisibility() != View.VISIBLE) {
+            return null;
+        }
+        int checkedId = simChips.getCheckedChipId();
+        if (checkedId == View.NO_ID) {
+            return null;
+        }
+        Chip chip = simChips.findViewById(checkedId);
+        Object tag = chip != null ? chip.getTag() : null;
+        if (tag == null || SIM_ALL_TAG.equals(tag)) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(tag.toString());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 
@@ -319,14 +418,15 @@ public class MainActivity extends AppCompatActivity {
         progress.show();
 
         Period period = currentPeriod();
+        Integer sim = currentSim();
         StatsRepository repository = new StatsRepository(this);
         executor.execute(() -> {
             try {
-                List<PeriodStat> periods = repository.loadStats(period);
-                if (StatsRepository.hasUsageAccess(this)) {
+                List<PeriodStat> periods = repository.loadStats(period, sim);
+                if (sim == null && StatsRepository.hasUsageAccess(this)) {
                     repository.fillMobileData(periods);
                 }
-                List<DetailEntry> entries = repository.loadAllEntries();
+                List<DetailEntry> entries = repository.loadAllEntries(sim);
                 File file = csv
                         ? Exporter.writeCsv(this, periods, entries, period)
                         : Exporter.writeJson(this, periods, entries, period);

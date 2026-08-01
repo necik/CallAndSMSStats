@@ -31,6 +31,7 @@ public class PeriodStatsAdapter extends RecyclerView.Adapter<PeriodStatsAdapter.
     private Runnable onEnableDataClick;
     private MobileDataLoader dataLoader;
     private boolean usageAccessGranted;
+    private boolean dataPerSimUnavailable;
 
     public void setOnPeriodClickListener(OnPeriodClickListener listener) {
         this.clickListener = listener;
@@ -47,6 +48,11 @@ public class PeriodStatsAdapter extends RecyclerView.Adapter<PeriodStatsAdapter.
 
     public void setUsageAccessGranted(boolean granted) {
         this.usageAccessGranted = granted;
+    }
+
+    /** Když je vybraná konkrétní SIM, mobilní data nelze rozdělit → zobraz jen „—". */
+    public void setDataPerSimUnavailable(boolean unavailable) {
+        this.dataPerSimUnavailable = unavailable;
     }
 
     /** Zapíše dotažená mobilní data a překreslí příslušnou položku (je-li stále v seznamu). */
@@ -90,11 +96,23 @@ public class PeriodStatsAdapter extends RecyclerView.Adapter<PeriodStatsAdapter.
         holder.rejectedCalls.setText(String.valueOf(stat.rejectedCalls));
         holder.incomingSms.setText(String.valueOf(stat.incomingSms));
         holder.outgoingSms.setText(String.valueOf(stat.outgoingSms));
+        holder.incomingMms.setText(String.valueOf(stat.incomingMms));
+        holder.outgoingMms.setText(String.valueOf(stat.outgoingMms));
         bindMobileData(holder, stat);
     }
 
     private void bindMobileData(ViewHolder holder, PeriodStat stat) {
         TextView view = holder.mobileData;
+
+        if (dataPerSimUnavailable) {
+            // Konkrétní SIM – data nejde rozdělit, jen „—" (bez akce).
+            view.setText("—");
+            view.setTextColor(holder.defaultValueColor);
+            view.setPaintFlags(view.getPaintFlags() & ~Paint.UNDERLINE_TEXT_FLAG);
+            view.setOnClickListener(null);
+            view.setClickable(false);
+            return;
+        }
 
         if (!usageAccessGranted) {
             // Bez Usage access – klikatelné „—", které otevře Nastavení.
@@ -149,6 +167,8 @@ public class PeriodStatsAdapter extends RecyclerView.Adapter<PeriodStatsAdapter.
         final TextView rejectedCalls;
         final TextView incomingSms;
         final TextView outgoingSms;
+        final TextView incomingMms;
+        final TextView outgoingMms;
         final TextView mobileData;
         final ColorStateList defaultValueColor;
 
@@ -161,6 +181,8 @@ public class PeriodStatsAdapter extends RecyclerView.Adapter<PeriodStatsAdapter.
             rejectedCalls = itemView.findViewById(R.id.rejectedCallsValue);
             incomingSms = itemView.findViewById(R.id.incomingSmsValue);
             outgoingSms = itemView.findViewById(R.id.outgoingSmsValue);
+            incomingMms = itemView.findViewById(R.id.incomingMmsValue);
+            outgoingMms = itemView.findViewById(R.id.outgoingMmsValue);
             mobileData = itemView.findViewById(R.id.mobileDataValue);
             defaultValueColor = mobileData.getTextColors();
         }

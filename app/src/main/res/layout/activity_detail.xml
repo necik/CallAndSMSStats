@@ -87,6 +87,22 @@
                 android:text="@string/filter_outgoing_sms" />
 
             <com.google.android.material.chip.Chip
+                android:id="@+id/chipIncomingMms"
+                style="@style/Widget.App.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:tag="6"
+                android:text="@string/filter_incoming_mms" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipOutgoingMms"
+                style="@style/Widget.App.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:tag="7"
+                android:text="@string/filter_outgoing_mms" />
+
+            <com.google.android.material.chip.Chip
                 android:id="@+id/chipMobileData"
                 style="@style/Widget.App.Chip.Filter"
                 android:layout_width="wrap_content"

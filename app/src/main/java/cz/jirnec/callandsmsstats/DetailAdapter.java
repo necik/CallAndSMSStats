@@ -20,7 +20,9 @@ public class DetailAdapter extends RecyclerView.Adapter<DetailAdapter.ViewHolder
             R.string.detail_missed_call,
             R.string.detail_rejected_call,
             R.string.detail_incoming_sms,
-            R.string.detail_outgoing_sms
+            R.string.detail_outgoing_sms,
+            R.string.detail_incoming_mms,
+            R.string.detail_outgoing_mms
     };
 
     private final List<DetailEntry> items = new ArrayList<>();
